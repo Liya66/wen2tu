@@ -18,6 +18,8 @@ jobs:
           node-version-file: .node-version
           cache: npm
       - run: npm ci
+      # Only shipped dependencies; dev tools never reach the site.
+      - run: npm audit --omit=dev --audit-level=high
       - run: npm run lint
       - run: npm test
       - run: npm run build

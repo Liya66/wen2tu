@@ -41,7 +41,7 @@ const CONTENT: Record<Language, { title: string; root: string; branches: Branch[
       {
         text: '一键生成',
         side: 'left',
-        children: [{ text: 'tip：使用任意AI，要求生成导图.md，即可一键极速生成' }],
+        children: [{ text: 'tip：让任意 AI 把材料整理成导图 .md，导入文兔兔，秒出导图' }],
       },
       {
         text: '快捷键',
@@ -108,7 +108,7 @@ const CONTENT: Record<Language, { title: string; root: string; branches: Branch[
       {
         text: 'One-click maps',
         side: 'left',
-        children: [{ text: 'Tip: ask any AI for a mind map as a .md file, then import it — done' }],
+        children: [{ text: 'Tip: ask any AI to turn your notes into a mind map .md, import it here — instant map' }],
       },
       {
         text: 'Shortcuts',
