@@ -37,8 +37,12 @@ export const NODE_STYLE_KEYS = [
   'color',
   'background',
   'fontWeight',
+  'fontStyle',
   'width',
   'border',
+  'borderBottom',
+  'borderRadius',
+  'padding',
   'textDecoration',
 ] as const
 export type NodeStyleKey = (typeof NODE_STYLE_KEYS)[number]
@@ -69,6 +73,39 @@ export interface MapSummary {
   style?: { stroke?: string; labelColor?: string }
 }
 
+/** CSS variables a map theme may set (colors and corner radii only). */
+export const THEME_VARS = [
+  '--bgcolor',
+  '--color',
+  '--main-color',
+  '--main-bgcolor',
+  '--main-bgcolor-transparent',
+  '--main-border',
+  '--main-radius',
+  '--root-color',
+  '--root-bgcolor',
+  '--root-border-color',
+  '--root-radius',
+  '--selected',
+  '--accent-color',
+  '--panel-color',
+  '--panel-bgcolor',
+  '--panel-border-color',
+] as const
+export type ThemeVar = (typeof THEME_VARS)[number]
+
+/**
+ * Colors of a map. `name` is a preset id (e.g. "ocean") or "custom";
+ * a map without a theme follows the system's light/dark setting.
+ */
+export interface MapTheme {
+  name: string
+  type: 'light' | 'dark'
+  /** Colors handed out to main branches in turn. */
+  palette: string[]
+  cssVar: Partial<Record<ThemeVar, string>>
+}
+
 /** Everything needed to render a map. A sanitized subset of Mind Elixir's data. */
 export interface MindMap {
   nodeData: MapNode
@@ -76,6 +113,7 @@ export interface MindMap {
   summaries?: MapSummary[]
   direction?: Direction
   compact?: boolean
+  theme?: MapTheme
 }
 
 export interface MindDocument {

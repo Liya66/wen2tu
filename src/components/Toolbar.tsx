@@ -3,6 +3,7 @@ import {
   FilePlus2,
   FolderOpen,
   Import,
+  PaintBucket,
   PanelLeft,
   Redo2,
   Save,
@@ -51,9 +52,21 @@ interface Props {
   sidebarOpen: boolean
   onToggleSidebar: () => void
   onShowShortcuts: () => void
+  onShowTemplates: () => void
+  styleOpen: boolean
+  onToggleStyle: () => void
 }
 
-export function Toolbar({ controller, state, sidebarOpen, onToggleSidebar, onShowShortcuts }: Props) {
+export function Toolbar({
+  controller,
+  state,
+  sidebarOpen,
+  onToggleSidebar,
+  onShowShortcuts,
+  onShowTemplates,
+  styleOpen,
+  onToggleStyle,
+}: Props) {
   const { t } = useTranslation()
   const disabled = !state.ready
   const size = 18
@@ -78,11 +91,13 @@ export function Toolbar({ controller, state, sidebarOpen, onToggleSidebar, onSho
       </div>
 
       <nav className="tool-group" aria-label={t('app.name')}>
-        <ToolButton
+        <Menu
           label={t('toolbar.new')}
           icon={<FilePlus2 size={size} aria-hidden="true" />}
-          onClick={() => controller.newDoc()}
-          disabled={disabled}
+          items={[
+            { label: t('toolbar.newBlank'), onSelect: () => controller.newDoc() },
+            { label: t('toolbar.newFromTemplate'), onSelect: onShowTemplates },
+          ]}
         />
         <ToolButton
           label={t('toolbar.open')}
@@ -140,6 +155,19 @@ export function Toolbar({ controller, state, sidebarOpen, onToggleSidebar, onSho
             { label: t('toolbar.exportMarkdown'), onSelect: () => controller.exportMarkdown() },
           ]}
         />
+        <span className="tool-separator" aria-hidden="true" />
+        <button
+          type="button"
+          className="tool-button"
+          aria-pressed={styleOpen}
+          aria-controls="style-panel"
+          onClick={onToggleStyle}
+          title={t('toolbar.style')}
+          disabled={disabled}
+        >
+          <PaintBucket size={size} aria-hidden="true" />
+          <span className="tool-label">{t('toolbar.style')}</span>
+        </button>
       </nav>
 
       <div className="toolbar-end">

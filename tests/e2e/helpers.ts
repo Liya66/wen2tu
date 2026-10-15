@@ -84,7 +84,7 @@ export async function useFakeFileSystem(page: Page) {
         return 'granted'
       }
     }
-    const fs = { handles: new Map<string, FakeHandle>(), nextOpen: '' }
+    const fs = { handles: new Map<string, FakeHandle>(), nextOpen: '', lastOpenOptions: null as unknown }
     Object.assign(window, {
       __fs: {
         get files() {
@@ -92,6 +92,9 @@ export async function useFakeFileSystem(page: Page) {
         },
         set nextOpen(name: string) {
           fs.nextOpen = name
+        },
+        get lastOpenOptions() {
+          return fs.lastOpenOptions
         },
         put(name: string, content: string) {
           fs.handles.set(name, new FakeHandle(name, content))
@@ -107,7 +110,8 @@ export async function useFakeFileSystem(page: Page) {
         fs.handles.set(handle.name, handle)
         return handle
       },
-      showOpenFilePicker: async () => {
+      showOpenFilePicker: async (options: unknown) => {
+        fs.lastOpenOptions = options
         const handle = fs.handles.get(fs.nextOpen)
         if (!handle) throw new DOMException('cancelled', 'AbortError')
         return [handle]

@@ -4,7 +4,9 @@ import { DocumentError } from './errors'
 import { safeCssValue, safeImageUrl, safeLinkUrl } from './sanitize'
 import {
   NODE_STYLE_KEYS,
+  THEME_VARS,
   type MapArrow,
+  type MapTheme,
   type MapNode,
   type MapSummary,
   type MindMap,
@@ -85,7 +87,32 @@ const mapSchema = z.object({
   summaries: z.array(z.unknown()).optional(),
   direction: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]).optional(),
   compact: z.boolean().optional(),
+  theme: z.unknown().optional(),
 })
+
+const themeSchema = z.object({
+  name: z.string().max(50),
+  type: z.enum(['light', 'dark']).default('light'),
+  palette: z.array(z.string()).max(30),
+  cssVar: z.record(z.string(), z.string()).default({}),
+})
+
+/** Keeps only known theme variables with safe values; invalid themes are dropped. */
+function sanitizeTheme(input: unknown): MapTheme | undefined {
+  if (input === undefined || input === null) return undefined
+  const parsed = themeSchema.safeParse(input)
+  if (!parsed.success) return undefined
+  const palette = parsed.data.palette.map(safeCssValue).filter((c): c is string => Boolean(c))
+  if (!palette.length) return undefined
+  const cssVar: MapTheme['cssVar'] = {}
+  for (const key of THEME_VARS) {
+    const value = parsed.data.cssVar[key]
+    if (value === undefined) continue
+    const safe = safeCssValue(value)
+    if (safe !== undefined) cssVar[key] = safe
+  }
+  return { name: parsed.data.name, type: parsed.data.type, palette, cssVar }
+}
 
 function describeIssue(error: z.ZodError, prefix: string): string {
   const issue = error.issues[0]
@@ -98,7 +125,7 @@ function cleanStyle(style: Record<string, string | number> | undefined) {
   const result: MapNode['style'] = {}
   for (const key of NODE_STYLE_KEYS) {
     const raw = style[key]
-    if (raw === undefined) continue
+    if (raw === undefined || raw === '') continue
     const value = safeCssValue(String(raw))
     if (value !== undefined) result[key] = value
   }
@@ -237,5 +264,7 @@ export function sanitizeMap(input: unknown): MindMap {
 
   if (raw.direction !== undefined) map.direction = raw.direction
   if (raw.compact) map.compact = true
+  const theme = sanitizeTheme(raw.theme)
+  if (theme) map.theme = theme
   return map
 }

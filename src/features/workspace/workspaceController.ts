@@ -12,7 +12,7 @@ import {
 } from '../file-manager/fileSystemAdapter'
 import { exportImage, type ImageFormat } from '../import-export/exportImage'
 import { exportMarkdown } from '../import-export/markdownExport'
-import { IMPORT_ACCEPT, NATIVE_ACCEPT, readSource } from '../import-export/readSource'
+import { SUPPORTED_ACCEPT, SUPPORTED_EXTENSIONS, readSource } from '../import-export/readSource'
 import { createMap, fileNameForTitle, parseDocument, serializeMap, titleFromFileName } from '../mindmap/document'
 import { DocumentError } from '../mindmap/errors'
 import type { MindMap } from '../mindmap/types'
@@ -35,7 +35,7 @@ export interface ControllerTexts {
   untitled: string
   rootTopic: string
   nativeFileType: string
-  importFileType: string
+  supportedFileTypes: string
 }
 
 export type SaveState = 'saved' | 'dirty' | 'saving' | 'error'
@@ -401,9 +401,10 @@ export class WorkspaceController {
 
   // ---- workspace management ----------------------------------------------
 
-  newDoc() {
+  /** Creates a new map (blank, or e.g. from a template) and opens it. */
+  newDoc(map: MindMap = createMap(this.texts().rootTopic), title?: string) {
     this.flush()
-    const doc = this.createDraft(createMap(this.texts().rootTopic))
+    const doc = title ? this.createDraft(map, this.uniqueTitle(title)) : this.createDraft(map)
     this.activate(doc.id)
   }
 
@@ -453,34 +454,34 @@ export class WorkspaceController {
 
   // ---- opening & importing ------------------------------------------------
 
+  /**
+   * Opens any supported file. `.mind.json` files stay linked to the file on
+   * disk; Markdown and OPML become new maps (saving never overwrites them).
+   */
   async openFile() {
     this.flush()
-    const texts = this.texts()
-    let picked: PickedFile | null
+    let picked: PickedFile | null = null
+    if (supportsFileSystemAccess()) {
+      try {
+        picked = await pickFileWithHandle(this.texts().supportedFileTypes, SUPPORTED_ACCEPT)
+        if (!picked) return
+      } catch (error) {
+        // Some embedded or locked-down browsers expose the API but refuse to
+        // use it; the classic file input still works there.
+        console.warn('[wen2tu] file picker unavailable, using file input', error)
+      }
+    }
     try {
-      picked = supportsFileSystemAccess()
-        ? await pickFileWithHandle(texts.nativeFileType, NATIVE_ACCEPT)
-        : await pickFileWithInput(['.json'])
+      picked ??= await pickFileWithInput(SUPPORTED_EXTENSIONS)
     } catch (error) {
       return this.showError(error)
     }
     if (picked) await this.openPicked(picked)
   }
 
-  async importFile() {
-    this.flush()
-    const texts = this.texts()
-    const extensions = Object.values(IMPORT_ACCEPT).flat()
-    let picked: PickedFile | null
-    try {
-      picked = supportsFileSystemAccess()
-        ? await pickFileWithHandle(texts.importFileType, IMPORT_ACCEPT)
-        : await pickFileWithInput(extensions)
-    } catch (error) {
-      return this.showError(error)
-    }
-    // Imported files are converted; never keep a handle that a save would overwrite.
-    if (picked) await this.openPicked({ ...picked, handle: undefined })
+  /** Same picker as Open; kept as its own entry point for discoverability. */
+  importFile() {
+    return this.openFile()
   }
 
   /** Validates a picked file and opens it. On any error the current map is left as is. */
@@ -558,23 +559,15 @@ export class WorkspaceController {
     const doc = this.activeDoc()
     if (!doc) return false
 
-    if (!supportsFileSystemAccess()) {
-      const fileName = fileNameForTitle(doc.title)
-      downloadText(doc.workingText, fileName, 'application/json')
-      doc.savedText = doc.workingText
-      doc.savedVia = 'download'
-      doc.fileName = fileName
-      void this.saveRecord(doc)
-      this.addNotice({ kind: 'downloaded', fileName })
-      return true
-    }
+    if (!supportsFileSystemAccess()) return this.downloadCopy(doc)
 
     let handle: FileSystemFileHandle | null
     try {
       handle = await pickSaveHandle(fileNameForTitle(doc.title), this.texts().nativeFileType)
     } catch (error) {
-      this.showError(error)
-      return false
+      // The API exists but the browser refuses it (embedded browsers, policies).
+      console.warn('[wen2tu] save picker unavailable, downloading instead', error)
+      return this.downloadCopy(doc)
     }
     if (!handle) return false
 
@@ -593,6 +586,17 @@ export class WorkspaceController {
     doc.title = titleFromFileName(handle.name)
     doc.fileLastModified = undefined
     return this.writeToFile(doc, { interactive: true, force: true })
+  }
+
+  private downloadCopy(doc: WorkspaceDoc): boolean {
+    const fileName = fileNameForTitle(doc.title)
+    downloadText(doc.workingText, fileName, 'application/json')
+    doc.savedText = doc.workingText
+    doc.savedVia = 'download'
+    doc.fileName = fileName
+    void this.saveRecord(doc)
+    this.addNotice({ kind: 'downloaded', fileName })
+    return true
   }
 
   private async writeToFile(

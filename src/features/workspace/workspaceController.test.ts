@@ -8,7 +8,7 @@ const texts = () => ({
   untitled: 'Untitled map',
   rootTopic: 'Central topic',
   nativeFileType: 'map',
-  importFileType: 'outline',
+  supportedFileTypes: 'maps and outlines',
 })
 
 /** Stands in for Mind Elixir: holds a map and lets tests edit it. */

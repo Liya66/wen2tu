@@ -2,26 +2,42 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dialog } from '../components/Dialog'
 import { FileSidebar } from '../components/FileSidebar'
-import { MindMapCanvas } from '../components/MindMapCanvas'
+import { MindMapCanvas, type EditorApi, type SelectedNode } from '../components/MindMapCanvas'
 import { NoticeArea } from '../components/NoticeArea'
 import { ShortcutsDialog } from '../components/ShortcutsDialog'
 import { StatusBar } from '../components/StatusBar'
+import { StylePanel } from '../components/StylePanel'
+import { TemplateDialog } from '../components/TemplateDialog'
+import { createMapFromTemplate } from '../features/appearance/templates'
 import { Toolbar } from '../components/Toolbar'
-import {
-  WorkspaceController,
-  type CanvasAdapter,
-  type DocSummary,
-} from '../features/workspace/workspaceController'
+import { WorkspaceController, type DocSummary } from '../features/workspace/workspaceController'
 import i18n, { LANGUAGES, type Language } from '../i18n'
 
 const WIDE_SCREEN = '(min-width: 800px)'
+const STYLE_PANEL_KEY = 'wen2tu.stylePanel'
+
+function readFlag(key: string): boolean {
+  try {
+    return localStorage.getItem(key) === '1'
+  } catch {
+    return false
+  }
+}
+
+function writeFlag(key: string, value: boolean) {
+  try {
+    localStorage.setItem(key, value ? '1' : '0')
+  } catch {
+    // Preference just won't persist.
+  }
+}
 
 function createController() {
   return new WorkspaceController(() => ({
     untitled: i18n.t('map.untitled'),
     rootTopic: i18n.t('map.rootTopic'),
     nativeFileType: i18n.t('fileTypes.native'),
-    importFileType: i18n.t('fileTypes.import'),
+    supportedFileTypes: i18n.t('fileTypes.supported'),
   }))
 }
 
@@ -40,12 +56,27 @@ export function App() {
   const [renameTarget, setRenameTarget] = useState<DocSummary | null>(null)
   const [renameValue, setRenameValue] = useState('')
   const [removeTarget, setRemoveTarget] = useState<DocSummary | null>(null)
+  const [templatesOpen, setTemplatesOpen] = useState(false)
+  const [styleOpen, setStyleOpen] = useState(() => readFlag(STYLE_PANEL_KEY))
+  const [editor, setEditor] = useState<EditorApi | null>(null)
+  const [selection, setSelection] = useState<SelectedNode[]>([])
 
   const language: Language = (LANGUAGES as readonly string[]).includes(i18nInstance.resolvedLanguage ?? '')
     ? (i18nInstance.resolvedLanguage as Language)
     : 'en'
 
-  const onCanvasReady = useCallback((adapter: CanvasAdapter | null) => controller.attachCanvas(adapter), [controller])
+  const onCanvasReady = useCallback(
+    (adapter: EditorApi | null) => {
+      controller.attachCanvas(adapter)
+      setEditor(adapter)
+    },
+    [controller],
+  )
+  const toggleStyle = () =>
+    setStyleOpen((open) => {
+      writeFlag(STYLE_PANEL_KEY, !open)
+      return !open
+    })
   const onCanvasChange = useCallback(() => controller.notifyChange(), [controller])
 
   // Global shortcuts and page lifecycle.
@@ -106,6 +137,9 @@ export function App() {
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen((open) => !open)}
         onShowShortcuts={() => setShortcutsOpen(true)}
+        onShowTemplates={() => setTemplatesOpen(true)}
+        styleOpen={styleOpen}
+        onToggleStyle={toggleStyle}
       />
       <div className="workspace">
         <FileSidebar
@@ -133,12 +167,24 @@ export function App() {
             newTopicName={t('map.newNode')}
             onReady={onCanvasReady}
             onChange={onCanvasChange}
+            onSelectionChange={setSelection}
           />
         </main>
+        {styleOpen && <StylePanel editor={editor} selection={selection} onClose={toggleStyle} />}
       </div>
       <StatusBar active={state.active} fileSystemAccess={state.fileSystemAccess} autoWrite={state.autoWrite} />
 
       <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+
+      <TemplateDialog
+        open={templatesOpen}
+        onClose={() => setTemplatesOpen(false)}
+        onPick={(template) => {
+          setTemplatesOpen(false)
+          const map = createMapFromTemplate(template, language)
+          controller.newDoc(map, template.id === 'blank' ? undefined : map.nodeData.topic)
+        }}
+      />
 
       <Dialog
         open={Boolean(state.conflictDocId)}

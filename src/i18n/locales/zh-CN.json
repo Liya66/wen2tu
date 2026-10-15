@@ -20,7 +20,10 @@
     "autoWriteHint": "每次编辑后稍等片刻，自动写入已关联的文件。",
     "shortcuts": "键盘快捷键",
     "toggleSidebar": "显示或隐藏脑图列表",
-    "language": "语言"
+    "language": "语言",
+    "style": "样式",
+    "newBlank": "空白脑图",
+    "newFromTemplate": "从模板新建…"
   },
   "sidebar": {
     "title": "脑图",
@@ -95,7 +98,7 @@
   },
   "fileTypes": {
     "native": "文兔兔脑图",
-    "import": "Markdown 或 OPML 大纲"
+    "supported": "文兔兔脑图 (.mind.json)、Markdown、OPML"
   },
   "shortcuts": {
     "title": "键盘快捷键",
@@ -121,5 +124,117 @@
   "footer": {
     "privacy": "你的脑图始终保存在本机。",
     "source": "源代码"
+  },
+  "style": {
+    "title": "样式",
+    "close": "关闭样式面板",
+    "tabNode": "节点",
+    "tabMap": "导图",
+    "noSelection": "选中一个或多个节点即可修改外观。按住 Ctrl/⌘ 点击或拖动框选可多选。",
+    "selected": "已选中 {{count}} 个节点",
+    "selected_other": "已选中 {{count}} 个节点",
+    "shape": "形状",
+    "square": "方角",
+    "rounded": "圆角",
+    "pill": "胶囊",
+    "border": "边框",
+    "default": "默认",
+    "none": "无",
+    "full": "全包边框",
+    "underline": "下划线",
+    "borderWidth": "粗细",
+    "thin": "细",
+    "medium": "中",
+    "thick": "粗",
+    "borderStyle": "线型",
+    "solid": "实线",
+    "dashed": "虚线",
+    "dotted": "点线",
+    "borderColor": "边框颜色",
+    "fill": "填充",
+    "fillSolid": "纯色",
+    "fillColor": "填充颜色",
+    "text": "文字",
+    "textColor": "文字颜色",
+    "fontSize": "字号",
+    "bold": "加粗",
+    "italic": "斜体",
+    "strike": "删除线",
+    "branchColor": "分支颜色",
+    "auto": "自动",
+    "resetNode": "清除节点样式",
+    "theme": "配色方案",
+    "themeAuto": "跟随系统",
+    "customColors": "自定义颜色",
+    "palette": "分支配色",
+    "layout": "布局",
+    "layoutLeft": "向左",
+    "layoutRight": "向右",
+    "layoutSide": "两侧",
+    "layoutDown": "向下",
+    "compact": "紧凑间距",
+    "useDefault": "默认",
+    "pickColor": "选择颜色",
+    "colors": {
+      "background": "背景",
+      "rootFill": "中心主题填充",
+      "rootText": "中心主题文字",
+      "mainFill": "主分支填充",
+      "mainText": "主分支文字和边框",
+      "text": "子主题文字"
+    }
+  },
+  "themes": {
+    "classic": "经典",
+    "ocean": "海洋",
+    "forest": "森林",
+    "sunset": "日落",
+    "sakura": "樱花",
+    "macaron": "马卡龙",
+    "mono": "极简黑白",
+    "midnight": "午夜",
+    "graphite": "石墨",
+    "dark": "深色",
+    "custom": "自定义"
+  },
+  "templates": {
+    "title": "从模板新建脑图",
+    "use": "使用模板",
+    "blank": {
+      "name": "空白",
+      "description": "从一个中心主题开始。"
+    },
+    "project": {
+      "name": "项目计划",
+      "description": "目标、范围、时间线、团队和风险。"
+    },
+    "meeting": {
+      "name": "会议记录",
+      "description": "议程、决定事项和待办。"
+    },
+    "swot": {
+      "name": "SWOT 分析",
+      "description": "优势、劣势、机会、威胁。"
+    },
+    "reading": {
+      "name": "读书笔记",
+      "description": "核心观点、摘抄与收获。"
+    },
+    "weekly": {
+      "name": "周计划",
+      "description": "工作、学习、健康与每周复盘。"
+    },
+    "brainstorm": {
+      "name": "头脑风暴",
+      "description": "拆解问题，收集想法。"
+    },
+    "decision": {
+      "name": "决策分析",
+      "description": "按标准比较不同方案。"
+    },
+    "org": {
+      "name": "组织架构",
+      "description": "自上而下的团队层级树。"
+    }
   }
 }

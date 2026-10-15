@@ -11,6 +11,9 @@
 - Import Markdown (headings, nested lists, GFM task lists) and OPML.
 - Export PNG, SVG and Markdown outlines.
 - English and Simplified Chinese interface.
+- 10 color schemes plus custom colors and branch palettes; layout direction and compact spacing.
+- 9 map templates in both languages.
+- Topic style panel: corner shape, outline/underline borders, fills, text color/size/bold/italic/strikethrough, branch colors. Color pickers preview live and commit once, as a single undo step.
 
 ### Known limitations · 已知限制
 - Direct file saving needs the File System Access API (Chrome, Edge and other Chromium browsers on desktop). Firefox and Safari use downloads.

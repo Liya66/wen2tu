@@ -20,7 +20,10 @@
     "autoWriteHint": "Writes linked files a moment after each edit.",
     "shortcuts": "Keyboard shortcuts",
     "toggleSidebar": "Show or hide the map list",
-    "language": "Language"
+    "language": "Language",
+    "style": "Style",
+    "newBlank": "Blank map",
+    "newFromTemplate": "From template…"
   },
   "sidebar": {
     "title": "Maps",
@@ -95,7 +98,7 @@
   },
   "fileTypes": {
     "native": "wen2tu mind map",
-    "import": "Markdown or OPML outline"
+    "supported": "wen2tu maps (.mind.json), Markdown, OPML"
   },
   "shortcuts": {
     "title": "Keyboard shortcuts",
@@ -121,5 +124,117 @@
   "footer": {
     "privacy": "Your maps never leave your device.",
     "source": "Source code"
+  },
+  "style": {
+    "title": "Style",
+    "close": "Close style panel",
+    "tabNode": "Topic",
+    "tabMap": "Map",
+    "noSelection": "Select one or more topics to change how they look. Hold Ctrl/⌘ or drag to select several.",
+    "selected": "{{count}} topic selected",
+    "selected_other": "{{count}} topics selected",
+    "shape": "Corners",
+    "square": "Square",
+    "rounded": "Rounded",
+    "pill": "Pill",
+    "border": "Border",
+    "default": "Default",
+    "none": "None",
+    "full": "Outline",
+    "underline": "Underline",
+    "borderWidth": "Weight",
+    "thin": "Thin",
+    "medium": "Medium",
+    "thick": "Thick",
+    "borderStyle": "Line",
+    "solid": "Solid",
+    "dashed": "Dashed",
+    "dotted": "Dotted",
+    "borderColor": "Border color",
+    "fill": "Fill",
+    "fillSolid": "Color",
+    "fillColor": "Fill color",
+    "text": "Text",
+    "textColor": "Text color",
+    "fontSize": "Size",
+    "bold": "Bold",
+    "italic": "Italic",
+    "strike": "Strikethrough",
+    "branchColor": "Branch color",
+    "auto": "Auto",
+    "resetNode": "Clear topic style",
+    "theme": "Color scheme",
+    "themeAuto": "Follow system",
+    "customColors": "Custom colors",
+    "palette": "Branch colors",
+    "layout": "Layout",
+    "layoutLeft": "Left",
+    "layoutRight": "Right",
+    "layoutSide": "Both sides",
+    "layoutDown": "Down",
+    "compact": "Compact spacing",
+    "useDefault": "Default",
+    "pickColor": "Pick a color",
+    "colors": {
+      "background": "Background",
+      "rootFill": "Center fill",
+      "rootText": "Center text",
+      "mainFill": "Main topic fill",
+      "mainText": "Main topic text & outline",
+      "text": "Subtopic text"
+    }
+  },
+  "themes": {
+    "classic": "Classic",
+    "ocean": "Ocean",
+    "forest": "Forest",
+    "sunset": "Sunset",
+    "sakura": "Sakura",
+    "macaron": "Macaron",
+    "mono": "Monochrome",
+    "midnight": "Midnight",
+    "graphite": "Graphite",
+    "dark": "Dark",
+    "custom": "Custom"
+  },
+  "templates": {
+    "title": "New map from a template",
+    "use": "Use template",
+    "blank": {
+      "name": "Blank",
+      "description": "Start from a single central topic."
+    },
+    "project": {
+      "name": "Project plan",
+      "description": "Goals, scope, timeline, team and risks."
+    },
+    "meeting": {
+      "name": "Meeting notes",
+      "description": "Agenda, decisions and action items."
+    },
+    "swot": {
+      "name": "SWOT analysis",
+      "description": "Strengths, weaknesses, opportunities, threats."
+    },
+    "reading": {
+      "name": "Reading notes",
+      "description": "Key ideas, quotes and takeaways from a book."
+    },
+    "weekly": {
+      "name": "Weekly plan",
+      "description": "Work, study, health and a weekly review."
+    },
+    "brainstorm": {
+      "name": "Brainstorm",
+      "description": "Explore a problem and collect ideas."
+    },
+    "decision": {
+      "name": "Decision",
+      "description": "Compare options against criteria."
+    },
+    "org": {
+      "name": "Org chart",
+      "description": "A top-down tree for teams and hierarchies."
+    }
   }
 }

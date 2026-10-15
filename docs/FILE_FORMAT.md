@@ -29,6 +29,7 @@ wen2tu saves mind maps as UTF-8 JSON with a small versioned envelope, so files s
 | `version` | Format version. The app refuses files newer than it understands and upgrades older ones. |
 | `map.direction` | Layout: `0` left, `1` right, `2` both sides, `3` downward. |
 | `map.compact` | Optional compact spacing. |
+| `map.theme` | Optional color scheme (see below). Omitted when the map follows the system's light/dark setting. |
 | `map.nodeData` | The root node. |
 | `map.arrows` | Optional links between any two nodes. |
 | `map.summaries` | Optional brackets that summarize a range of siblings (`start`–`end` child indexes of `parent`). |
@@ -42,7 +43,7 @@ wen2tu saves mind maps as UTF-8 JSON with a small versioned envelope, so files s
 | `children` | node[] | Child nodes, in order. |
 | `expanded` | boolean | `false` when collapsed; omitted otherwise. |
 | `direction` | `0` \| `1` | Side of the root for first-level nodes. |
-| `style` | object | `fontSize`, `fontFamily`, `color`, `background`, `fontWeight`, `width`, `border`, `textDecoration` (strings). |
+| `style` | object | CSS strings: `fontSize`, `fontFamily`, `color`, `background`, `fontWeight`, `fontStyle`, `width`, `border`, `borderBottom`, `borderRadius`, `padding`, `textDecoration`. |
 | `tags` | string[] | Labels shown under the topic. |
 | `icons` | string[] | Emoji shown after the topic. |
 | `hyperLink` | string | `http:`, `https:` or `mailto:` URL. |
@@ -50,13 +51,26 @@ wen2tu saves mind maps as UTF-8 JSON with a small versioned envelope, so files s
 | `branchColor` | string | CSS color of the branch line. |
 | `image` | object | `{ url, width, height, fit? }`; `url` must be `https:` or a raster `data:` URL. |
 
+### Theme
+
+```json
+{
+  "name": "ocean",
+  "type": "light",
+  "palette": ["#0f7ea8", "#1aa3a3", "#3a86ff"],
+  "cssVar": { "--bgcolor": "#f1f7fb", "--root-bgcolor": "#0f4c75", "--root-color": "#ffffff" }
+}
+```
+
+`name` is a preset id or `"custom"`. `palette` colors are handed to main branches in turn. `cssVar` may only contain these variables: `--bgcolor`, `--color`, `--main-color`, `--main-bgcolor`, `--main-bgcolor-transparent`, `--main-border`, `--main-radius`, `--root-color`, `--root-bgcolor`, `--root-border-color`, `--root-radius`, `--selected`, `--accent-color`, `--panel-color`, `--panel-bgcolor`, `--panel-border-color`.
+
 ## Safety rules applied on load
 
 Files are untrusted input. When opening a file the app:
 
 - validates the structure with a schema and rejects files that do not match;
 - drops unknown fields (including Mind Elixir's `dangerouslySetInnerHTML`);
-- drops links and images with other protocols, and CSS values that could load resources;
+- drops links and images with other protocols, and CSS values (in styles and themes) that could load resources;
 - drops arrows and summaries that point at missing nodes;
 - refuses maps over 50,000 nodes or 500 levels deep, or files over 20 MB.
 

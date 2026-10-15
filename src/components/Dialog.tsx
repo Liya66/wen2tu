@@ -8,10 +8,12 @@ interface Props {
   actions: ReactNode
   /** Rendered as a form so Enter submits; receives the submit event. */
   onSubmit?: () => void
+  /** Wider dialog for galleries. */
+  wide?: boolean
 }
 
 /** Modal dialog built on the native <dialog> element (focus trap and Escape for free). */
-export function Dialog({ open, title, onClose, children, actions, onSubmit }: Props) {
+export function Dialog({ open, title, onClose, children, actions, onSubmit, wide }: Props) {
   const ref = useRef<HTMLDialogElement>(null)
   const titleId = useId()
 
@@ -40,7 +42,7 @@ export function Dialog({ open, title, onClose, children, actions, onSubmit }: Pr
   return (
     <dialog
       ref={ref}
-      className="dialog"
+      className={wide ? 'dialog dialog-wide' : 'dialog'}
       aria-labelledby={titleId}
       onCancel={(event) => {
         event.preventDefault()

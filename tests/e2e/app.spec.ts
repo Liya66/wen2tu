@@ -14,6 +14,7 @@ declare global {
     __fs: {
       files: Record<string, string>
       nextOpen: string
+      lastOpenOptions: { types: Array<{ accept: Record<string, string[]> }> }
       put(name: string, content: string): void
       externalWrite(name: string, content: string): void
     }
@@ -208,4 +209,91 @@ test('fits a phone screen without horizontal scrolling', async ({ page }) => {
   await addChildToRoot(page, 'A fairly long node title that makes the map wider than the screen')
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
   expect(overflow).toBeLessThanOrEqual(0)
+})
+
+test('menus are fully visible and keep the toolbar in place', async ({ page }) => {
+  await openApp(page)
+  const newButton = page.getByRole('navigation').getByRole('button', { name: 'New', exact: true })
+  const before = await newButton.boundingBox()
+  await page.getByRole('button', { name: 'Export' }).click()
+  const viewport = page.viewportSize()!
+  for (const item of await page.getByRole('menuitem').all()) {
+    await expect(item).toBeVisible()
+    const box = (await item.boundingBox())!
+    expect(box.x).toBeGreaterThanOrEqual(0)
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width)
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height)
+  }
+  expect(await newButton.boundingBox()).toEqual(before)
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('menu')).toHaveCount(0)
+})
+
+test('Import offers .mind.json files too, and keeps them linked', async ({ page }) => {
+  await useFakeFileSystem(page)
+  await openApp(page)
+  await page.evaluate((text) => {
+    window.__fs.put('earlier.mind.json', text)
+    window.__fs.nextOpen = 'earlier.mind.json'
+  }, nativeFile('Earlier map', ['kept']))
+  await page.getByRole('button', { name: 'Import', exact: true }).click()
+  await expect(page.locator('me-root me-tpc')).toHaveText('Earlier map')
+  await expect(page.getByTestId('save-status')).toHaveText('Saved to earlier.mind.json')
+
+  const accepted = await page.evaluate(() => window.__fs.lastOpenOptions.types.flatMap((t) => Object.values(t.accept).flat()))
+  expect(accepted).toEqual(expect.arrayContaining(['.json', '.md', '.opml']))
+})
+
+test('the fallback file input accepts maps and outlines', async ({ page }) => {
+  await useFallbackFileApi(page)
+  await openApp(page)
+  const chooserPromise = page.waitForEvent('filechooser')
+  await page.getByRole('button', { name: 'Import', exact: true }).click()
+  const chooser = await chooserPromise
+  const accept = await chooser.element().getAttribute('accept')
+  expect(accept).toContain('.json')
+  expect(accept).toContain('.md')
+  await chooser.setFiles({ name: 'again.mind.json', mimeType: 'application/json', buffer: Buffer.from(nativeFile('Again')) })
+  await expect(page.locator('me-root me-tpc')).toHaveText('Again')
+})
+
+test('templates, color schemes and topic styles are saved in the file', async ({ page }) => {
+  await useFakeFileSystem(page)
+  await openApp(page)
+
+  await page.getByRole('navigation').getByRole('button', { name: 'New', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'From template…' }).click()
+  await page.getByTestId('template-project').click()
+  await expect(page.locator('me-root me-tpc')).toHaveText('Project plan')
+  await expect(page.getByRole('button', { name: /^Project plan/ })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Style' }).click()
+  const panel = page.getByRole('complementary', { name: 'Style' })
+  await panel.getByRole('tab', { name: 'Map' }).click()
+  await expect(panel.getByRole('button', { name: 'Ocean', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await panel.getByRole('button', { name: 'Midnight', exact: true }).click()
+  await expect(panel.getByRole('button', { name: 'Midnight', exact: true })).toHaveAttribute('aria-pressed', 'true')
+
+  // Selecting a topic switches the panel to its controls.
+  await page.locator('me-tpc', { hasText: 'Timeline' }).click()
+  await expect(panel.getByText('1 topic selected')).toBeVisible()
+  await panel.getByRole('radio', { name: 'Outline' }).click()
+  await panel.getByRole('radio', { name: 'Square' }).click()
+  await panel.getByRole('button', { name: 'Bold' }).click()
+  const topic = page.locator('me-tpc', { hasText: 'Timeline' })
+  await expect(topic).toHaveCSS('font-weight', '700')
+  await expect(topic).toHaveCSS('border-top-style', 'solid')
+
+  // Undo reverts the last style change only.
+  await page.getByRole('button', { name: 'Undo' }).click()
+  await expect(page.locator('me-tpc', { hasText: 'Timeline' })).not.toHaveCSS('font-weight', '700')
+  await page.getByRole('button', { name: 'Redo' }).click()
+
+  await page.keyboard.press('ControlOrMeta+s')
+  await expect(page.getByTestId('save-status')).toHaveText('Saved to Project plan.mind.json')
+  const saved = JSON.parse(await page.evaluate(() => window.__fs.files['Project plan.mind.json']))
+  expect(saved.map.theme.name).toBe('midnight')
+  const timeline = saved.map.nodeData.children.find((n: { topic: string }) => n.topic === 'Timeline')
+  expect(timeline.style).toMatchObject({ borderRadius: '0px', fontWeight: 'bold' })
+  expect(timeline.style.border).toMatch(/^2px solid /)
 })

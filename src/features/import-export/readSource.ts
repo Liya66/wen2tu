@@ -4,13 +4,15 @@ import type { MindMap } from '../mindmap/types'
 
 export type SourceKind = 'native' | 'markdown' | 'opml'
 
-export const NATIVE_ACCEPT = { 'application/json': ['.json'] }
-export const IMPORT_ACCEPT = {
+/** Every file type wen2tu can open: its own maps plus importable outlines. */
+export const SUPPORTED_ACCEPT: Record<string, string[]> = {
+  'application/json': ['.json'],
   'text/markdown': ['.md', '.markdown'],
   'text/plain': ['.txt'],
   'text/x-opml': ['.opml'],
   'application/xml': ['.xml'],
 }
+export const SUPPORTED_EXTENSIONS = Object.values(SUPPORTED_ACCEPT).flat()
 
 export function detectKind(fileName: string): SourceKind | null {
   const name = fileName.toLowerCase()
