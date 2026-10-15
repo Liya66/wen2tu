@@ -1,0 +1,51 @@
+import { parseDocument, titleFromFileName } from '../mindmap/document'
+import { DocumentError } from '../mindmap/errors'
+import type { MindMap } from '../mindmap/types'
+
+export type SourceKind = 'native' | 'markdown' | 'opml'
+
+export const NATIVE_ACCEPT = { 'application/json': ['.json'] }
+export const IMPORT_ACCEPT = {
+  'text/markdown': ['.md', '.markdown'],
+  'text/plain': ['.txt'],
+  'text/x-opml': ['.opml'],
+  'application/xml': ['.xml'],
+}
+
+export function detectKind(fileName: string): SourceKind | null {
+  const name = fileName.toLowerCase()
+  if (name.endsWith('.json')) return 'native'
+  if (/\.(md|markdown|txt)$/.test(name)) return 'markdown'
+  if (/\.(opml|xml)$/.test(name)) return 'opml'
+  return null
+}
+
+export interface ReadResult {
+  kind: SourceKind
+  title: string
+  map: MindMap
+}
+
+/**
+ * Turns file contents into a validated map. Throws DocumentError for any
+ * problem, so callers can keep the current document untouched on failure.
+ * Importers are loaded on demand to keep the initial bundle small.
+ */
+export async function readSource(fileName: string, text: string): Promise<ReadResult> {
+  const kind = detectKind(fileName)
+  const title = titleFromFileName(fileName)
+  switch (kind) {
+    case 'native':
+      return { kind, title, map: parseDocument(text).map }
+    case 'markdown': {
+      const { importMarkdown } = await import('./markdownImport')
+      return { kind, title, map: importMarkdown(text, title) }
+    }
+    case 'opml': {
+      const { importOpml } = await import('./opmlImport')
+      return { kind, title, map: importOpml(text, title) }
+    }
+    default:
+      throw new DocumentError('unsupported-file', fileName)
+  }
+}

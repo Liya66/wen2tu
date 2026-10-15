@@ -1,0 +1,125 @@
+{
+  "app": {
+    "name": "文兔兔",
+    "tagline": "本地优先的思维导图"
+  },
+  "toolbar": {
+    "new": "新建",
+    "open": "打开",
+    "import": "导入",
+    "save": "保存",
+    "saveAs": "另存为",
+    "undo": "撤销",
+    "redo": "重做",
+    "export": "导出",
+    "exportPng": "PNG 图片",
+    "exportSvg": "SVG 图片",
+    "exportMarkdown": "Markdown 大纲",
+    "settings": "设置",
+    "autoWrite": "自动保存到文件",
+    "autoWriteHint": "每次编辑后稍等片刻，自动写入已关联的文件。",
+    "shortcuts": "键盘快捷键",
+    "toggleSidebar": "显示或隐藏脑图列表",
+    "language": "语言"
+  },
+  "sidebar": {
+    "title": "脑图",
+    "linked": "已关联本机文件",
+    "draft": "仅保存在此浏览器中",
+    "unsaved": "有未保存的修改",
+    "rename": "重命名",
+    "remove": "从列表中移除",
+    "storedInBrowser": "列表中的脑图保存在此浏览器里。点击“保存”可以得到一份属于你自己的文件。"
+  },
+  "status": {
+    "savedFile": "已保存到 {{file}}",
+    "dirty": "有未保存的修改",
+    "draft": "草稿 · 仅保存在此浏览器中",
+    "downloadedClean": "与已下载的副本一致",
+    "downloadedDirty": "有修改尚未下载",
+    "saving": "保存中……",
+    "error": "保存失败。修改仍保留在这里，请重试。",
+    "needsPermission": "按 {{shortcut}} 重新允许写入文件",
+    "fallbackMode": "此浏览器无法直接写入文件：保存时会下载一份副本。",
+    "autoWriteOn": "自动保存已开启"
+  },
+  "notices": {
+    "dismiss": "关闭",
+    "recovered": "已恢复上次未保存的修改。",
+    "recoveredKeep": "保留修改",
+    "recoveredDiscard": "放弃修改",
+    "externalChange": "此文件已在文兔兔之外被修改。",
+    "externalReload": "载入磁盘上的文件",
+    "externalKeep": "保留我的版本",
+    "downloaded": "已下载 {{file}}。此浏览器无法覆盖原文件，每次保存都会下载一份新副本。",
+    "imported": "已将 {{file}} 导入为新脑图。保存后会生成 .mind.json 文件。",
+    "storageUnavailable": "浏览器存储不可用（可能处于隐私模式）。刷新后修改会丢失，请保存到文件。"
+  },
+  "dialogs": {
+    "cancel": "取消",
+    "conflictTitle": "文件已在磁盘上被修改",
+    "conflictBody": "“{{file}}” 在你打开之后被其他程序修改过。现在保存会覆盖那些修改。",
+    "conflictOverwrite": "覆盖",
+    "conflictSaveAs": "另存为新文件",
+    "conflictReload": "放弃我的修改并载入文件",
+    "removeTitle": "移除“{{title}}”？",
+    "removeBodyDirty": "这张脑图有尚未保存到文件的修改，移除后将永久丢失。",
+    "removeBodyClean": "只会从列表中移除，不会删除本机上的文件。",
+    "removeConfirm": "移除",
+    "renameTitle": "重命名脑图",
+    "renameLabel": "名称",
+    "renameConfirm": "重命名",
+    "close": "关闭"
+  },
+  "errors": {
+    "title": "操作未完成",
+    "invalid-json": "文件不是有效的 JSON。",
+    "not-a-mindmap": "这个 JSON 文件不是文兔兔或 Mind Elixir 脑图。",
+    "unsupported-version": "这个文件由更新版本的文兔兔创建，请更新应用。",
+    "invalid-structure": "脑图数据已损坏或不完整。",
+    "too-large": "文件过大或层级过深，无法打开。",
+    "invalid-markdown": "无法读取这个 Markdown 文件。",
+    "invalid-opml": "OPML 文件无效。",
+    "unsupported-file": "不支持此文件类型。可以打开 .mind.json 文件，或导入 .md 和 .opml 文件。",
+    "fileMissing": "找不到文件，可能已被移动或删除。请使用“另存为”。",
+    "permissionDenied": "文件访问权限被拒绝。请使用“另存为”选择其他位置。",
+    "storage": "无法写入浏览器存储，请将内容保存到文件。",
+    "unknown": "出现了问题。",
+    "details": "详情：{{detail}}"
+  },
+  "map": {
+    "untitled": "未命名脑图",
+    "rootTopic": "中心主题",
+    "newNode": "新节点",
+    "label": "思维导图编辑区"
+  },
+  "fileTypes": {
+    "native": "文兔兔脑图",
+    "import": "Markdown 或 OPML 大纲"
+  },
+  "shortcuts": {
+    "title": "键盘快捷键",
+    "save": "保存",
+    "saveAs": "另存为",
+    "open": "打开",
+    "undo": "撤销",
+    "redo": "重做",
+    "addChild": "添加子节点",
+    "addSibling": "添加同级节点",
+    "edit": "编辑选中节点",
+    "remove": "删除选中节点",
+    "navigate": "在节点间移动",
+    "zoom": "放大 / 缩小",
+    "center": "画布居中",
+    "collapse": "展开或折叠到指定层级（随后按 0–9）"
+  },
+  "language": {
+    "label": "语言",
+    "en": "English",
+    "zh-CN": "简体中文"
+  },
+  "footer": {
+    "privacy": "你的脑图始终保存在本机。",
+    "source": "源代码"
+  }
+}

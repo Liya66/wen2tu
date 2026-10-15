@@ -1,0 +1,125 @@
+{
+  "app": {
+    "name": "wen2tu",
+    "tagline": "Local-first mind maps"
+  },
+  "toolbar": {
+    "new": "New",
+    "open": "Open",
+    "import": "Import",
+    "save": "Save",
+    "saveAs": "Save as",
+    "undo": "Undo",
+    "redo": "Redo",
+    "export": "Export",
+    "exportPng": "PNG image",
+    "exportSvg": "SVG image",
+    "exportMarkdown": "Markdown outline",
+    "settings": "Settings",
+    "autoWrite": "Save to file automatically",
+    "autoWriteHint": "Writes linked files a moment after each edit.",
+    "shortcuts": "Keyboard shortcuts",
+    "toggleSidebar": "Show or hide the map list",
+    "language": "Language"
+  },
+  "sidebar": {
+    "title": "Maps",
+    "linked": "Linked to a file on this device",
+    "draft": "Only in this browser",
+    "unsaved": "Unsaved changes",
+    "rename": "Rename",
+    "remove": "Remove from list",
+    "storedInBrowser": "Maps in this list are kept in this browser. Use Save to keep a file of your own."
+  },
+  "status": {
+    "savedFile": "Saved to {{file}}",
+    "dirty": "Unsaved changes",
+    "draft": "Draft · kept in this browser only",
+    "downloadedClean": "Matches the downloaded copy",
+    "downloadedDirty": "Changes not downloaded yet",
+    "saving": "Saving…",
+    "error": "Save failed. Your changes are kept here; try again.",
+    "needsPermission": "Press {{shortcut}} to allow saving to the file again",
+    "fallbackMode": "This browser can't write files directly: saving downloads a copy.",
+    "autoWriteOn": "Auto-save on"
+  },
+  "notices": {
+    "dismiss": "Dismiss",
+    "recovered": "Restored unsaved changes from your last session.",
+    "recoveredKeep": "Keep changes",
+    "recoveredDiscard": "Discard changes",
+    "externalChange": "This file was changed outside wen2tu.",
+    "externalReload": "Load file from disk",
+    "externalKeep": "Keep my version",
+    "downloaded": "Downloaded {{file}}. This browser can't overwrite the original file, so each save downloads a new copy.",
+    "imported": "Imported {{file}} as a new map. Save it to create a .mind.json file.",
+    "storageUnavailable": "Browser storage is unavailable (private mode?). Edits won't survive a reload — save to a file."
+  },
+  "dialogs": {
+    "cancel": "Cancel",
+    "conflictTitle": "File changed on disk",
+    "conflictBody": "“{{file}}” was modified by another program since you opened it. Saving now would overwrite those changes.",
+    "conflictOverwrite": "Overwrite",
+    "conflictSaveAs": "Save as new file",
+    "conflictReload": "Discard mine and load file",
+    "removeTitle": "Remove “{{title}}”?",
+    "removeBodyDirty": "This map has changes that are not saved to a file. Removing it deletes them permanently.",
+    "removeBodyClean": "The map is removed from this list. Files on your device are not deleted.",
+    "removeConfirm": "Remove",
+    "renameTitle": "Rename map",
+    "renameLabel": "Name",
+    "renameConfirm": "Rename",
+    "close": "Close"
+  },
+  "errors": {
+    "title": "Couldn't complete that",
+    "invalid-json": "The file is not valid JSON.",
+    "not-a-mindmap": "This JSON file is not a wen2tu or Mind Elixir mind map.",
+    "unsupported-version": "This file was made by a newer version of wen2tu. Please update the app.",
+    "invalid-structure": "The mind map data is damaged or incomplete.",
+    "too-large": "The file is too large or too deeply nested to open.",
+    "invalid-markdown": "The Markdown file couldn't be read.",
+    "invalid-opml": "The OPML file is not valid.",
+    "unsupported-file": "This file type isn't supported. Open .mind.json files, or import .md and .opml files.",
+    "fileMissing": "The file could not be found. It may have been moved or deleted — use Save as.",
+    "permissionDenied": "Permission to access the file was denied. Use Save as to choose another location.",
+    "storage": "Couldn't write to browser storage. Save your work to a file.",
+    "unknown": "Something went wrong.",
+    "details": "Details: {{detail}}"
+  },
+  "map": {
+    "untitled": "Untitled map",
+    "rootTopic": "Central topic",
+    "newNode": "New node",
+    "label": "Mind map editor"
+  },
+  "fileTypes": {
+    "native": "wen2tu mind map",
+    "import": "Markdown or OPML outline"
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "save": "Save",
+    "saveAs": "Save as",
+    "open": "Open",
+    "undo": "Undo",
+    "redo": "Redo",
+    "addChild": "Add child node",
+    "addSibling": "Add sibling node",
+    "edit": "Edit selected node",
+    "remove": "Delete selected nodes",
+    "navigate": "Move between nodes",
+    "zoom": "Zoom in / out",
+    "center": "Center the map",
+    "collapse": "Expand or collapse to level (then 0–9)"
+  },
+  "language": {
+    "label": "Language",
+    "en": "English",
+    "zh-CN": "简体中文"
+  },
+  "footer": {
+    "privacy": "Your maps never leave your device.",
+    "source": "Source code"
+  }
+}
