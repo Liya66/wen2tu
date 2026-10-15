@@ -9,7 +9,7 @@
 - Detects files changed by other programs and asks before overwriting them.
 - Optional automatic saving to linked files.
 - Import Markdown (headings, nested lists, GFM task lists) and OPML.
-- Paste Markdown or indented outlines: onto a selected topic as subtopics (one undo step), or as a new map; “From pasted text…” dialog with a copyable AI prompt.
+- Paste Markdown or indented outlines: onto a selected topic as subtopics (one undo step), or as a new map; “From pasted text…” dialog with a copyable AI prompt; “Paste outline” in the topic menu for people who don't use the shortcut.
 - Export PNG, SVG and Markdown outlines. Images carry the map background; transparent exports use a light version of dark color schemes.
 - English and Simplified Chinese interface.
 - Chinese interface by default (English one click away).

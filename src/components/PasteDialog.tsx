@@ -5,13 +5,18 @@ import { Dialog } from './Dialog'
 
 interface Props {
   open: boolean
+  /** `new` creates a map; `insert` adds the outline under the selected topic. */
+  mode: 'new' | 'insert'
   onClose: () => void
-  /** Resolves true when a map was created. */
+  /** Resolves true when the outline was used. */
   onCreate: (text: string) => Promise<boolean>
 }
 
-/** Paste Markdown (e.g. from an AI chat) to create a map, and copy a prompt that asks for that format. */
-export function PasteDialog({ open, onClose, onCreate }: Props) {
+/**
+ * Paste Markdown (e.g. from an AI chat) to create a map or add it under the
+ * selected topic, and copy a prompt that asks an AI for that format.
+ */
+export function PasteDialog({ open, mode, onClose, onCreate }: Props) {
   const { t } = useTranslation()
   const [text, setText] = useState('')
   const [copied, setCopied] = useState(false)
@@ -35,7 +40,7 @@ export function PasteDialog({ open, onClose, onCreate }: Props) {
   return (
     <Dialog
       open={open}
-      title={t('paste.title')}
+      title={t(mode === 'insert' ? 'paste.insertTitle' : 'paste.title')}
       onClose={close}
       onSubmit={() => {
         if (!text.trim()) return
@@ -50,7 +55,7 @@ export function PasteDialog({ open, onClose, onCreate }: Props) {
             {t('dialogs.cancel')}
           </button>
           <button type="submit" className="button primary" disabled={!text.trim()}>
-            {t('paste.create')}
+            {t(mode === 'insert' ? 'paste.insertCreate' : 'paste.create')}
           </button>
         </>
       }

@@ -12,6 +12,7 @@ import { en as engineEn, zh_CN as engineZh, type LangPack } from 'mind-elixir/i1
 import 'mind-elixir/style.css'
 import { useEffect, useRef } from 'react'
 import type { Language } from '../i18n'
+import { shortcut } from '../utils/platform'
 import { parseOutline } from '../features/import-export/outlineText'
 import { fromEngineData } from '../features/mindmap/document'
 import { sanitizeNodeTree } from '../features/mindmap/schema'
@@ -94,6 +95,9 @@ export interface EditorApi extends CanvasAdapter {
   pasteOutline(text: string): Promise<boolean>
 }
 
+/** Id of the “Paste outline” item added to the engine's context menu. */
+const PASTE_MENU_ID = 'wen2tu-paste-outline'
+
 /** Marker Mind Elixir puts in copied topics' clipboard JSON. */
 const ENGINE_CLIPBOARD_MAGIC = 'MIND-ELIXIR-WAIT-COPY'
 
@@ -147,6 +151,10 @@ interface Props {
   onSelectionChange?: (nodes: SelectedNode[]) => void
   /** Problems that happen inside the editor, e.g. a paste that can't be read. */
   onError?: (error: unknown) => void
+  /** Label of the “Paste outline” item in the topic context menu. */
+  pasteLabel: string
+  /** The user chose “Paste outline” in the topic context menu. */
+  onPasteRequest?: () => void
 }
 
 export function MindMapCanvas({
@@ -157,14 +165,16 @@ export function MindMapCanvas({
   onChange,
   onSelectionChange,
   onError,
+  pasteLabel,
+  onPasteRequest,
 }: Props) {
   const elementRef = useRef<HTMLDivElement>(null)
   const mindRef = useRef<MindElixirInstance | null>(null)
   const localeRef = useRef<LangPack>({ ...ENGINE_LOCALES[language] })
-  const callbacks = useRef({ onReady, onChange, onSelectionChange, onError })
+  const callbacks = useRef({ onReady, onChange, onSelectionChange, onError, onPasteRequest })
 
   useEffect(() => {
-    callbacks.current = { onReady, onChange, onSelectionChange, onError }
+    callbacks.current = { onReady, onChange, onSelectionChange, onError, onPasteRequest }
   })
 
   useEffect(() => {
@@ -184,7 +194,23 @@ export function MindMapCanvas({
       keypress: true,
       allowUndo: true,
       newTopicName,
-      contextMenu: { locale: localeRef.current, focus: true, link: true },
+      contextMenu: {
+        locale: localeRef.current,
+        focus: true,
+        link: true,
+        // The engine uses `name` as the item's id; the visible label is set
+        // (and translated) by the language effect below.
+        extend: [
+          {
+            name: PASTE_MENU_ID,
+            key: shortcut('V'),
+            onclick: () => {
+              mind.container.querySelector<HTMLElement>('.context-menu')?.setAttribute('hidden', '')
+              callbacks.current.onPasteRequest?.()
+            },
+          },
+        ],
+      },
       // Without a markdown function, arrow and summary labels are inserted
       // as raw HTML. Escaping everything keeps user text as plain text.
       markdown: (text) => escapeHtml(text),
@@ -530,7 +556,9 @@ export function MindMapCanvas({
     if (!mind) return
     applyEngineLocale(mind, localeRef.current, language)
     mind.newTopicName = newTopicName
-  }, [language, newTopicName])
+    const pasteItem = mind.container.querySelector(`#${PASTE_MENU_ID} span`)
+    if (pasteItem) pasteItem.textContent = pasteLabel
+  }, [language, newTopicName, pasteLabel])
 
   return <div ref={elementRef} className="canvas" role="application" aria-label={label} data-testid="canvas" />
 }

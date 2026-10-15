@@ -525,3 +525,56 @@ test.describe('pasting outlines', () => {
     await expect(page.locator('me-tpc').filter({ hasText: /^Passport$/ })).toBeVisible()
   })
 })
+
+test.describe('Paste outline from the topic menu', () => {
+  const openTopicMenu = async (page: import('@playwright/test').Page, topic: string) => {
+    await page.locator('me-tpc').filter({ hasText: new RegExp(`^${topic}$`) }).click({ button: 'right' })
+    const item = page.locator('#wen2tu-paste-outline')
+    await expect(item).toBeVisible()
+    return item
+  }
+
+  test('reads the clipboard and adds the outline under the topic', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+    await openApp(page)
+    await addChildToRoot(page, 'Target')
+    await page.evaluate(() => navigator.clipboard.writeText('- Alpha\n  - Alpha 1\n- Beta'))
+
+    const item = await openTopicMenu(page, 'Target')
+    await expect(item).toContainText('Paste outline')
+    await item.click()
+
+    const target = page.locator('me-wrapper').filter({ has: page.locator('me-tpc').filter({ hasText: /^Target$/ }) }).first()
+    for (const text of ['Alpha', 'Alpha 1', 'Beta']) {
+      await expect(target.locator('me-tpc').filter({ hasText: new RegExp(`^${text}$`) })).toBeVisible()
+    }
+    await expect(page.locator('.context-menu')).toBeHidden()
+  })
+
+  test('falls back to the paste box when the clipboard cannot be read', async ({ page }) => {
+    await openApp(page)
+    await page.evaluate(() => {
+      Object.defineProperty(navigator.clipboard, 'readText', {
+        value: () => Promise.reject(new DOMException('denied', 'NotAllowedError')),
+      })
+    })
+    await addChildToRoot(page, 'Target')
+    await (await openTopicMenu(page, 'Target')).click()
+
+    const dialog = page.getByRole('dialog', { name: 'Paste an outline under the selected topic' })
+    await expect(dialog).toBeVisible()
+    await dialog.getByRole('textbox').fill('Gamma\n\tGamma 1')
+    await dialog.getByRole('button', { name: 'Add as subtopics' }).click()
+    await expect(dialog).toBeHidden()
+    const target = page.locator('me-wrapper').filter({ has: page.locator('me-tpc').filter({ hasText: /^Target$/ }) }).first()
+    await expect(target.locator('me-tpc').filter({ hasText: /^Gamma 1$/ })).toBeVisible()
+    // Still the same map, not a new one.
+    await expect(page.locator('me-root me-tpc')).toHaveText('Central topic')
+  })
+
+  test('the menu item follows the interface language', async ({ page }) => {
+    await openApp(page)
+    await page.getByRole('combobox', { name: 'Language' }).selectOption('zh-CN')
+    await expect(page.locator('#wen2tu-paste-outline span').first()).toHaveText('粘贴大纲')
+  })
+})

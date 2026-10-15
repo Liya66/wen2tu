@@ -68,7 +68,8 @@ export function App() {
   const [renameValue, setRenameValue] = useState('')
   const [removeTarget, setRemoveTarget] = useState<DocSummary | null>(null)
   const [templatesOpen, setTemplatesOpen] = useState(false)
-  const [pasteOpen, setPasteOpen] = useState(false)
+  /** Which paste box is open: for a new map, or to add under the selected topic. */
+  const [pasteMode, setPasteMode] = useState<'new' | 'insert' | null>(null)
   const [styleOpen, setStyleOpen] = useState(() => readFlag(STYLE_PANEL_KEY))
   const [editor, setEditor] = useState<EditorApi | null>(null)
   const editorRef = useRef<EditorApi | null>(null)
@@ -86,6 +87,21 @@ export function App() {
     },
     [controller],
   )
+  /**
+   * “Paste outline” from the topic menu: read the clipboard directly when the
+   * browser allows it, otherwise open the paste box for this topic.
+   */
+  const pasteIntoSelection = async () => {
+    let text = ''
+    try {
+      text = (await navigator.clipboard?.readText?.()) ?? ''
+    } catch {
+      // Not supported or permission denied: fall back to the paste box.
+    }
+    if (text.trim() && (await editorRef.current?.pasteOutline(text).catch(() => false))) return
+    setPasteMode('insert')
+  }
+
   const toggleStyle = () =>
     setStyleOpen((open) => {
       writeFlag(STYLE_PANEL_KEY, !open)
@@ -180,7 +196,7 @@ export function App() {
         onToggleSidebar={() => setSidebarOpen((open) => !open)}
         onShowShortcuts={() => setShortcutsOpen(true)}
         onShowTemplates={() => setTemplatesOpen(true)}
-        onShowPaste={() => setPasteOpen(true)}
+        onShowPaste={() => setPasteMode('new')}
         styleOpen={styleOpen}
         onToggleStyle={toggleStyle}
       />
@@ -212,6 +228,8 @@ export function App() {
             onChange={onCanvasChange}
             onSelectionChange={setSelection}
             onError={(error) => controller.reportError(error)}
+            pasteLabel={t('paste.menuItem')}
+            onPasteRequest={() => void pasteIntoSelection()}
           />
         </main>
         {styleOpen && <StylePanel editor={editor} selection={selection} onClose={toggleStyle} />}
@@ -220,7 +238,16 @@ export function App() {
 
       <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
 
-      <PasteDialog open={pasteOpen} onClose={() => setPasteOpen(false)} onCreate={(text) => controller.importText(text)} />
+      <PasteDialog
+        open={pasteMode !== null}
+        mode={pasteMode ?? 'new'}
+        onClose={() => setPasteMode(null)}
+        onCreate={async (text) => {
+          // If the topic is no longer selected, the outline still isn't lost: it becomes a new map.
+          if (pasteMode === 'insert' && (await editorRef.current?.pasteOutline(text))) return true
+          return controller.importText(text)
+        }}
+      />
 
       <TemplateDialog
         open={templatesOpen}
