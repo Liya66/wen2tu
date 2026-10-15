@@ -8,6 +8,7 @@ export function ShortcutsDialog({ open, onClose }: { open: boolean; onClose: () 
     [shortcut('S'), t('shortcuts.save')],
     [shortcut('Shift', 'S'), t('shortcuts.saveAs')],
     [shortcut('O'), t('shortcuts.open')],
+    [shortcut('V'), t('shortcuts.paste')],
     [shortcut('Z'), t('shortcuts.undo')],
     [shortcut('Shift', 'Z'), t('shortcuts.redo')],
     ['Tab', t('shortcuts.addChild')],

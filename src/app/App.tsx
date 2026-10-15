@@ -1,14 +1,16 @@
-import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dialog } from '../components/Dialog'
 import { FileSidebar } from '../components/FileSidebar'
 import { MindMapCanvas, type EditorApi, type SelectedNode } from '../components/MindMapCanvas'
 import { NoticeArea } from '../components/NoticeArea'
+import { PasteDialog } from '../components/PasteDialog'
 import { ShortcutsDialog } from '../components/ShortcutsDialog'
 import { StatusBar } from '../components/StatusBar'
 import { StylePanel } from '../components/StylePanel'
 import { TemplateDialog } from '../components/TemplateDialog'
 import { createMapFromTemplate } from '../features/appearance/templates'
+import { looksLikeOutline } from '../features/import-export/outlineText'
 import { createWelcomeMap } from '../features/onboarding/welcomeMap'
 import { Toolbar } from '../components/Toolbar'
 import { WorkspaceController, type DocSummary } from '../features/workspace/workspaceController'
@@ -66,8 +68,10 @@ export function App() {
   const [renameValue, setRenameValue] = useState('')
   const [removeTarget, setRemoveTarget] = useState<DocSummary | null>(null)
   const [templatesOpen, setTemplatesOpen] = useState(false)
+  const [pasteOpen, setPasteOpen] = useState(false)
   const [styleOpen, setStyleOpen] = useState(() => readFlag(STYLE_PANEL_KEY))
   const [editor, setEditor] = useState<EditorApi | null>(null)
+  const editorRef = useRef<EditorApi | null>(null)
   const [selection, setSelection] = useState<SelectedNode[]>([])
 
   const language: Language = (LANGUAGES as readonly string[]).includes(i18nInstance.resolvedLanguage ?? '')
@@ -77,6 +81,7 @@ export function App() {
   const onCanvasReady = useCallback(
     (adapter: EditorApi | null) => {
       controller.attachCanvas(adapter)
+      editorRef.current = adapter
       setEditor(adapter)
     },
     [controller],
@@ -116,6 +121,25 @@ export function App() {
         event.returnValue = ''
       }
     }
+    // Pasting an outline with no topic selected creates a new map. (With a
+    // topic selected, the editor handles the paste and inserts subtopics.)
+    const onPaste = (event: ClipboardEvent) => {
+      if (event.defaultPrevented) return
+      const target = event.target as HTMLElement | null
+      if (target?.closest('input, textarea, select, dialog, [contenteditable]')) return
+      const text = event.clipboardData?.getData('text/plain')
+      if (!text) return
+      // A topic is selected but the editor isn't focused: still paste into it.
+      const editor = editorRef.current
+      if (editor?.selection().length) {
+        event.preventDefault()
+        void editor.pasteOutline(text).catch((error) => controller.reportError(error))
+        return
+      }
+      if (!looksLikeOutline(text)) return
+      event.preventDefault()
+      void controller.importText(text)
+    }
     const onHide = () => controller.flush()
     const onVisibility = () => {
       if (document.visibilityState === 'hidden') controller.flush()
@@ -124,12 +148,14 @@ export function App() {
     const onFocus = () => void controller.checkExternalChange()
 
     window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('paste', onPaste)
     window.addEventListener('beforeunload', onBeforeUnload)
     window.addEventListener('pagehide', onHide)
     window.addEventListener('focus', onFocus)
     document.addEventListener('visibilitychange', onVisibility)
     return () => {
       window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('paste', onPaste)
       window.removeEventListener('beforeunload', onBeforeUnload)
       window.removeEventListener('pagehide', onHide)
       window.removeEventListener('focus', onFocus)
@@ -154,6 +180,7 @@ export function App() {
         onToggleSidebar={() => setSidebarOpen((open) => !open)}
         onShowShortcuts={() => setShortcutsOpen(true)}
         onShowTemplates={() => setTemplatesOpen(true)}
+        onShowPaste={() => setPasteOpen(true)}
         styleOpen={styleOpen}
         onToggleStyle={toggleStyle}
       />
@@ -184,6 +211,7 @@ export function App() {
             onReady={onCanvasReady}
             onChange={onCanvasChange}
             onSelectionChange={setSelection}
+            onError={(error) => controller.reportError(error)}
           />
         </main>
         {styleOpen && <StylePanel editor={editor} selection={selection} onClose={toggleStyle} />}
@@ -191,6 +219,8 @@ export function App() {
       <StatusBar active={state.active} fileSystemAccess={state.fileSystemAccess} autoWrite={state.autoWrite} />
 
       <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+
+      <PasteDialog open={pasteOpen} onClose={() => setPasteOpen(false)} onCreate={(text) => controller.importText(text)} />
 
       <TemplateDialog
         open={templatesOpen}

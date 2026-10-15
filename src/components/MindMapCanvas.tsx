@@ -12,7 +12,9 @@ import { en as engineEn, zh_CN as engineZh, type LangPack } from 'mind-elixir/i1
 import 'mind-elixir/style.css'
 import { useEffect, useRef } from 'react'
 import type { Language } from '../i18n'
+import { parseOutline } from '../features/import-export/outlineText'
 import { fromEngineData } from '../features/mindmap/document'
+import { sanitizeNodeTree } from '../features/mindmap/schema'
 import { escapeHtml } from '../features/mindmap/sanitize'
 import { mainBranchPath, subBranchPath, topicKind } from '../features/appearance/branchPath'
 import { toHexColor, type StylePatch } from '../features/appearance/nodeStyles'
@@ -88,7 +90,12 @@ export interface EditorApi extends CanvasAdapter {
   /** Applies a style to every selected topic as a single undo step. */
   applyNodeStyle(makePatch: (node: SelectedNode) => StylePatch): void
   setBranchColor(color: string | undefined): void
+  /** Parses an outline and adds it under the selected topic; false if nothing is selected. */
+  pasteOutline(text: string): Promise<boolean>
 }
+
+/** Marker Mind Elixir puts in copied topics' clipboard JSON. */
+const ENGINE_CLIPBOARD_MAGIC = 'MIND-ELIXIR-WAIT-COPY'
 
 /** Lowest zoom used when opening a map that is larger than the screen. */
 const MIN_OPEN_SCALE = 0.6
@@ -138,16 +145,26 @@ interface Props {
   onReady: (adapter: EditorApi | null) => void
   onChange: () => void
   onSelectionChange?: (nodes: SelectedNode[]) => void
+  /** Problems that happen inside the editor, e.g. a paste that can't be read. */
+  onError?: (error: unknown) => void
 }
 
-export function MindMapCanvas({ language, label, newTopicName, onReady, onChange, onSelectionChange }: Props) {
+export function MindMapCanvas({
+  language,
+  label,
+  newTopicName,
+  onReady,
+  onChange,
+  onSelectionChange,
+  onError,
+}: Props) {
   const elementRef = useRef<HTMLDivElement>(null)
   const mindRef = useRef<MindElixirInstance | null>(null)
   const localeRef = useRef<LangPack>({ ...ENGINE_LOCALES[language] })
-  const callbacks = useRef({ onReady, onChange, onSelectionChange })
+  const callbacks = useRef({ onReady, onChange, onSelectionChange, onError })
 
   useEffect(() => {
-    callbacks.current = { onReady, onChange, onSelectionChange }
+    callbacks.current = { onReady, onChange, onSelectionChange, onError }
   })
 
   useEffect(() => {
@@ -263,6 +280,54 @@ export function MindMapCanvas({ language, label, newTopicName, onReady, onChange
       reportSelection()
     }
     const branches = { sub: styledSubBranch, main: styledMainBranch }
+
+    /** Inserts topics (with their subtopics) under the selected topic as one undo step. */
+    const insertUnderSelection = (nodes: MapNode[]) => {
+      const target = mind.currentNode
+      if (!target || !nodes.length) return false
+      if (target.nodeObj.expanded === false) mind.expandNode(target, true)
+      // copyNodes clones the topics with fresh ids and fires a single operation.
+      mind.copyNodes(nodes.map((nodeObj) => ({ nodeObj }) as unknown as Topic), target)
+      return true
+    }
+
+    // Paste: runs before the engine's own handler (capture phase on an ancestor).
+    // - The engine's node clipboard format is sanitized like a file before use,
+    //   since any web page can put that JSON on the clipboard.
+    // - Text outlines become subtopics of the selected topic.
+    // - With nothing selected, the event is left for the app (new map).
+    const onPaste = (event: ClipboardEvent) => {
+      const target = event.target as HTMLElement | null
+      if (target?.id === 'input-box' || target?.isContentEditable) return
+      const text = event.clipboardData?.getData('text/plain')
+      if (!text) return
+      let engineClipboard: unknown
+      try {
+        const parsed = JSON.parse(text)
+        if (parsed?.magic === ENGINE_CLIPBOARD_MAGIC) engineClipboard = parsed.data
+      } catch {
+        // Not the engine's format.
+      }
+      if (engineClipboard !== undefined) {
+        event.preventDefault()
+        event.stopImmediatePropagation()
+        const items = Array.isArray(engineClipboard) ? engineClipboard : []
+        const nodes = items.flatMap((item) => {
+          try {
+            return [sanitizeNodeTree(item)]
+          } catch {
+            return []
+          }
+        })
+        insertUnderSelection(nodes)
+        return
+      }
+      if (!mind.currentNode) return
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      void parseOutline(text).then(insertUnderSelection, (error) => callbacks.current.onError?.(error))
+    }
+    element.addEventListener('paste', onPaste, true)
     mind.bus.addListener('operation', onOperation)
     mind.bus.addListener('expandNode', notify)
     mind.bus.addListener('changeDirection', notify)
@@ -433,6 +498,10 @@ export function MindMapCanvas({ language, label, newTopicName, onReady, onChange
         })
         commitNodeChange(nodes)
       },
+      pasteOutline: async (text) => {
+        if (!mind.currentNode) return false
+        return insertUnderSelection(await parseOutline(text))
+      },
       setBranchColor: (color) => {
         const nodes = (mind.currentNodes ?? []).filter((tpc) => tpc.nodeObj.parent)
         if (!nodes.length) return
@@ -446,6 +515,7 @@ export function MindMapCanvas({ language, label, newTopicName, onReady, onChange
     callbacks.current.onReady(adapter)
 
     return () => {
+      element.removeEventListener('paste', onPaste, true)
       darkQuery.removeEventListener('change', onSystemThemeChange)
       callbacks.current.onReady(null)
       mind.destroy()

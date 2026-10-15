@@ -53,6 +53,7 @@ interface Props {
   onToggleSidebar: () => void
   onShowShortcuts: () => void
   onShowTemplates: () => void
+  onShowPaste: () => void
   styleOpen: boolean
   onToggleStyle: () => void
 }
@@ -64,6 +65,7 @@ export function Toolbar({
   onToggleSidebar,
   onShowShortcuts,
   onShowTemplates,
+  onShowPaste,
   styleOpen,
   onToggleStyle,
 }: Props) {
@@ -97,6 +99,7 @@ export function Toolbar({
           items={[
             { label: t('toolbar.newBlank'), onSelect: () => controller.newDoc() },
             { label: t('toolbar.newFromTemplate'), onSelect: onShowTemplates },
+            { label: t('toolbar.newFromText'), onSelect: onShowPaste },
           ]}
         />
         <ToolButton

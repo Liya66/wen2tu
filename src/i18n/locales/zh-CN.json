@@ -27,7 +27,8 @@
     "exportPngTransparent": "PNG 图片（透明背景）",
     "exportSvgTransparent": "SVG 图片（透明背景）",
     "exportTransparentHint": "不带背景；深色配色按浅色版本导出。",
-    "welcome": "欢迎导图"
+    "welcome": "欢迎导图",
+    "newFromText": "粘贴文字生成…"
   },
   "sidebar": {
     "title": "脑图",
@@ -118,7 +119,8 @@
     "navigate": "在节点间移动",
     "zoom": "放大 / 缩小",
     "center": "画布居中",
-    "collapse": "展开或折叠到指定层级（随后按 0–9）"
+    "collapse": "展开或折叠到指定层级（随后按 0–9）",
+    "paste": "粘贴大纲（选中节点时作为下级节点）"
   },
   "language": {
     "label": "语言",
@@ -242,5 +244,15 @@
       "name": "组织架构",
       "description": "自上而下的团队层级树。"
     }
+  },
+  "paste": {
+    "title": "粘贴文字生成导图",
+    "label": "Markdown 或缩进大纲",
+    "placeholder": "# 中心主题\n## 分支\n- 要点\n  - 细节",
+    "hint": "小技巧：在导图上按 {{shortcut}} 也能粘贴大纲——选中节点时会生成它的下级节点，未选中时会生成新导图。",
+    "copyPrompt": "复制 AI 提示词",
+    "copied": "已复制，粘贴到 AI 对话中即可",
+    "create": "生成导图",
+    "prompt": "请把下面的内容整理成思维导图大纲，只用 Markdown 输出，并放在一个代码块中：\n1. 第一行用一级标题（# ）写中心主题；\n2. 用二级标题（## ）写主要分支；\n3. 用列表（- ）写下级要点，每深一层多缩进两个空格；\n4. 每个节点只写关键词或短句，不写长段落；\n5. 大纲前后不要任何说明。\n\n内容：\n"
   }
 }

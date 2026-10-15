@@ -451,3 +451,77 @@ test('map shape is saved, and color rows stay on one line', async ({ page }) => 
   expect(saved.map.shape).toBe('square')
   expect(saved.map.theme).toBeUndefined()
 })
+
+/** Dispatches a paste event carrying `text`, as the browser does for Ctrl/⌘+V. */
+async function pasteText(page: import('@playwright/test').Page, text: string) {
+  await page.evaluate((value) => {
+    const data = new DataTransfer()
+    data.setData('text/plain', value)
+    const target = document.activeElement ?? document.body
+    target.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }))
+  }, text)
+}
+
+test.describe('pasting outlines', () => {
+  test('onto a selected topic, an outline becomes its subtopics (one undo step)', async ({ page }) => {
+    await openApp(page)
+    await addChildToRoot(page, 'Target')
+    await page.locator('me-tpc').filter({ hasText: /^Target$/ }).click()
+    await pasteText(page, '```markdown\n- 前端\n  - React\n  - Vite\n- 后端\n  - Node\n```')
+
+    const target = page.locator('me-wrapper').filter({ has: page.locator('me-tpc').filter({ hasText: /^Target$/ }) }).first()
+    for (const text of ['前端', 'React', 'Vite', '后端', 'Node']) {
+      await expect(target.locator('me-tpc').filter({ hasText: new RegExp(`^${text}$`) })).toBeVisible()
+    }
+    await page.getByRole('button', { name: 'Undo' }).click()
+    await expect(page.locator('me-tpc').filter({ hasText: /^React$/ })).toHaveCount(0)
+    await expect(page.locator('me-tpc').filter({ hasText: /^Target$/ })).toBeVisible()
+  })
+
+  test('with nothing selected, an outline becomes a new map', async ({ page }) => {
+    await openApp(page)
+    await page.locator('body').click({ position: { x: 5, y: 5 } })
+    await pasteText(page, '# 学习计划\n## 数学\n- 线性代数\n## 英语')
+    await expect(page.locator('me-root me-tpc')).toHaveText('学习计划')
+    await expect(page.getByRole('button', { name: /^学习计划/ })).toBeVisible()
+    await expect(page.locator('me-tpc').filter({ hasText: /^线性代数$/ })).toBeVisible()
+  })
+
+  test('copied-topic data from the clipboard is sanitized', async ({ page }) => {
+    let dialogOpened = false
+    page.on('dialog', async (dialog) => {
+      dialogOpened = true
+      await dialog.dismiss()
+    })
+    await openApp(page)
+    await page.locator('me-root me-tpc').click()
+    await pasteText(
+      page,
+      JSON.stringify({
+        magic: 'MIND-ELIXIR-WAIT-COPY',
+        data: [{ id: 'x', topic: 'Pasted', dangerouslySetInnerHTML: '<img src=x onerror="alert(1)">' }],
+      }),
+    )
+    await expect(page.locator('me-tpc').filter({ hasText: /^Pasted$/ })).toBeVisible()
+    await expect(page.locator('me-tpc img')).toHaveCount(0)
+    expect(dialogOpened).toBe(false)
+  })
+
+  test('the paste dialog creates a map and copies the AI prompt', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+    await openApp(page)
+    await page.getByRole('navigation').getByRole('button', { name: 'New', exact: true }).click()
+    await page.getByRole('menuitem', { name: 'From pasted text…' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Create a map from text' })
+    await dialog.getByRole('button', { name: 'Copy AI prompt' }).click()
+    await expect(dialog.getByRole('button', { name: /Copied/ })).toBeVisible()
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('level-1 heading')
+
+    await expect(dialog.getByRole('button', { name: 'Create map' })).toBeDisabled()
+    await dialog.getByRole('textbox').fill('Trip\n\tPacking\n\t\tPassport\n\tBudget')
+    await dialog.getByRole('button', { name: 'Create map' }).click()
+    await expect(dialog).toBeHidden()
+    await expect(page.locator('me-root me-tpc')).toHaveText('Trip')
+    await expect(page.locator('me-tpc').filter({ hasText: /^Passport$/ })).toBeVisible()
+  })
+})

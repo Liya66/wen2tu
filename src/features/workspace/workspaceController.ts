@@ -539,6 +539,28 @@ export class WorkspaceController {
     if (picked) await this.openPicked(picked)
   }
 
+  /**
+   * Creates a new map from pasted text (Markdown or an indented outline).
+   * Returns false, with an error notice, if nothing usable was found.
+   */
+  async importText(text: string): Promise<boolean> {
+    this.flush()
+    try {
+      const { outlineToMap } = await import('../import-export/outlineText')
+      const { map, title } = await outlineToMap(text, this.texts().untitled)
+      this.newDoc(map, title)
+      return true
+    } catch (error) {
+      this.showError(error)
+      return false
+    }
+  }
+
+  /** Reports a problem that happened outside the controller (e.g. in the editor). */
+  reportError(error: unknown) {
+    this.showError(error)
+  }
+
   /** Same picker as Open; kept as its own entry point for discoverability. */
   importFile() {
     return this.openFile()

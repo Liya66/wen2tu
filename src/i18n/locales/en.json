@@ -27,7 +27,8 @@
     "exportPngTransparent": "PNG, transparent",
     "exportSvgTransparent": "SVG, transparent",
     "exportTransparentHint": "No background; dark color schemes use their light version.",
-    "welcome": "Welcome map"
+    "welcome": "Welcome map",
+    "newFromText": "From pasted text…"
   },
   "sidebar": {
     "title": "Maps",
@@ -118,7 +119,8 @@
     "navigate": "Move between nodes",
     "zoom": "Zoom in / out",
     "center": "Center the map",
-    "collapse": "Expand or collapse to level (then 0–9)"
+    "collapse": "Expand or collapse to level (then 0–9)",
+    "paste": "Paste an outline (under the selected topic)"
   },
   "language": {
     "label": "Language",
@@ -242,5 +244,15 @@
       "name": "Org chart",
       "description": "A top-down tree for teams and hierarchies."
     }
+  },
+  "paste": {
+    "title": "Create a map from text",
+    "label": "Markdown or an indented outline",
+    "placeholder": "# Central topic\n## Branch\n- Point\n  - Detail",
+    "hint": "Tip: on the map, press {{shortcut}} to paste an outline — onto a selected topic it becomes subtopics, with nothing selected it becomes a new map.",
+    "copyPrompt": "Copy AI prompt",
+    "copied": "Copied — paste it into your AI chat",
+    "create": "Create map",
+    "prompt": "Turn the content below into a mind map outline. Reply with Markdown only, in one code block:\n1. First line: the central topic as a level-1 heading (# ).\n2. Main branches as level-2 headings (## ).\n3. Details as bullet lists (- ), indenting two more spaces per level.\n4. Keep every item to a few words or a short phrase — no paragraphs.\n5. No explanations before or after the outline.\n\nContent:\n"
   }
 }
