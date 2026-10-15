@@ -302,12 +302,15 @@ export function MindMapCanvas({ language, label, newTopicName, onReady, onChange
     mind.bus.addListener('unselectNodes', reportSelection)
 
     const applyTheme = (refresh: boolean) => {
+      // The shape class changes topic sizes (boxed subtopics get padding and a
+      // border), so it must be in place before changeTheme lays out and draws
+      // the branch lines; otherwise lines are measured against the old sizes.
+      mind.container.style.setProperty('--wen2tu-sub-radius', savedShape ? SHAPE_RADII[savedShape].sub : '')
+      mind.container.classList.toggle('wen2tu-shaped', Boolean(savedShape))
       mind.changeTheme(
         toEngineTheme(savedTheme ?? systemTheme(darkQuery.matches), branches, savedShape),
         refresh,
       )
-      mind.container.style.setProperty('--wen2tu-sub-radius', savedShape ? SHAPE_RADII[savedShape].sub : '')
-      mind.container.classList.toggle('wen2tu-shaped', Boolean(savedShape))
     }
     const onSystemThemeChange = () => {
       if (!savedTheme) applyTheme(true)
