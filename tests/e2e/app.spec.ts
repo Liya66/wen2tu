@@ -347,13 +347,26 @@ test('transparent export uses the light version of a dark scheme', async ({ page
   await expect(page.getByTestId('save-status')).toHaveText(/Draft/)
 })
 
-test('a first visit opens the welcome map in the interface language', async ({ page }) => {
-  await openApp(page, 'zh-CN', { welcome: true })
+test('a first visit opens the Chinese welcome map by default', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN')
   await expect(page.locator('me-root me-tpc')).toHaveText('欢迎来到文兔兔')
   await expect(page.getByRole('button', { name: /^欢迎使用文兔兔/ })).toBeVisible()
-  for (const topic of ['这是什么', '适合用来', '快速上手', '文件与保存', '开源项目']) {
-    await expect(page.locator('me-tpc', { hasText: topic }).first()).toBeVisible()
+
+  const topic = (text: string) => page.locator('me-tpc').filter({ hasText: new RegExp(`^${text}$`) })
+  const rootBox = (await page.locator('me-root me-tpc').boundingBox())!
+  for (const [text, side] of [
+    ['文兔兔', 'left'],
+    ['一键生成', 'left'],
+    ['快捷键', 'left'],
+    ['文件与保存', 'right'],
+    ['下一步', 'right'],
+    ['开源项目', 'right'],
+  ] as const) {
+    const box = (await topic(text).boundingBox())!
+    expect(box.x < rootBox.x ? 'left' : 'right', text).toBe(side)
   }
+  await expect(page.locator('me-tpc .icons')).toHaveCount(0)
   const github = page.locator('me-tpc', { hasText: 'GitHub' }).locator('a.hyper-link')
   await expect(github).toHaveAttribute('href', 'https://github.com/Liya66/wen2tu')
 
@@ -362,9 +375,57 @@ test('a first visit opens the welcome map in the interface language', async ({ p
   await page.reload()
   await expect(page.getByRole('button', { name: /^欢迎使用文兔兔/ })).toHaveCount(1)
 
-  // Settings → Welcome map opens a fresh copy in the current language.
+  // Untouched, it follows the interface language.
   await page.getByRole('combobox', { name: '语言' }).selectOption('en')
+  await expect(page.locator('me-root me-tpc')).toHaveText('Welcome to wen2tu')
+  await expect(page.getByRole('button', { name: /^Welcome to wen2tu/ })).toHaveCount(1)
+
+  // Settings → Welcome map opens a fresh copy.
   await page.getByRole('button', { name: 'Settings' }).click()
   await page.getByRole('menuitem', { name: 'Welcome map' }).click()
-  await expect(page.locator('me-root me-tpc')).toHaveText('Welcome to wen2tu')
+  await expect(page.getByRole('button', { name: /^Welcome to wen2tu/ })).toHaveCount(2)
+})
+
+test('dragging a topic onto another moves its whole branch', async ({ page }) => {
+  await openApp(page)
+  await addChildToRoot(page, 'Branch A')
+  await page.keyboard.press('Tab')
+  await page.keyboard.insertText('A1')
+  await page.keyboard.press('Enter')
+  await addChildToRoot(page, 'Branch B')
+
+  const source = page.locator('me-tpc').filter({ hasText: /^Branch A$/ })
+  const target = page.locator('me-tpc').filter({ hasText: /^Branch B$/ })
+  // One-sided layout keeps both branches in the middle of the screen (dragging
+  // near the edge scrolls the canvas instead).
+  await page.getByRole('button', { name: 'Style' }).click()
+  const panel = page.getByRole('complementary', { name: 'Style' })
+  await panel.getByRole('tab', { name: 'Map' }).click()
+  await panel.getByRole('radio', { name: 'Right' }).click()
+  await panel.getByRole('button', { name: 'Close style panel' }).click()
+
+  // Closing the panel widens the canvas and re-centers the map; measure once it settles.
+  const settled = async (locator: typeof source) => {
+    let previous = JSON.stringify(await locator.boundingBox())
+    for (;;) {
+      await page.waitForTimeout(150)
+      const current = JSON.stringify(await locator.boundingBox())
+      if (current === previous) return JSON.parse(current) as { x: number; y: number; width: number; height: number }
+      previous = current
+    }
+  }
+
+  // Press on the unselected topic and drag it, as a user would.
+  const from = await settled(source)
+  const to = await settled(target)
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 12 })
+  await page.mouse.up()
+
+  // Branch A, with its child A1, is now inside Branch B.
+  const branchB = page.locator('me-wrapper').filter({ has: target }).first()
+  await expect(branchB.locator('me-tpc').filter({ hasText: /^Branch A$/ })).toBeVisible()
+  await expect(branchB.locator('me-tpc').filter({ hasText: /^A1$/ })).toBeVisible()
+  await expect(page.getByTestId('save-status')).toHaveText(/Draft/)
 })

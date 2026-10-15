@@ -41,12 +41,10 @@ describe('translations', () => {
 })
 
 describe('detectLanguage', () => {
-  it('prefers the saved choice, then the browser, then English', () => {
-    expect(detectLanguage('en', ['zh-CN'])).toBe('en')
-    expect(detectLanguage(null, ['zh-TW', 'en'])).toBe('zh-CN')
-    expect(detectLanguage(null, ['fr-FR', 'en-GB'])).toBe('en')
-    expect(detectLanguage(null, ['fr-FR'])).toBe('en')
-    expect(detectLanguage(null, [])).toBe('en')
+  it('uses the saved choice, otherwise Chinese', () => {
+    expect(detectLanguage('en')).toBe('en')
+    expect(detectLanguage('zh-CN')).toBe('zh-CN')
+    expect(detectLanguage(null)).toBe('zh-CN')
   })
 })
 

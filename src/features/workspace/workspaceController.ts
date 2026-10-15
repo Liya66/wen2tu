@@ -130,6 +130,8 @@ export class WorkspaceController {
   private readonly texts: () => ControllerTexts
   private readonly openStore: () => Promise<WorkspaceStore>
   private readonly welcome?: () => { title: string; map: MindMap }
+  /** The welcome map and its content when created, to tell whether it was edited. */
+  private welcomeRecord: { id: string; text: string } | null = null
   private store: WorkspaceStore | null = null
   private canvas: CanvasAdapter | null = null
   private readonly docs = new Map<string, WorkspaceDoc>()
@@ -272,12 +274,16 @@ export class WorkspaceController {
     if (!activeId || !this.docs.has(activeId)) {
       activeId = [...this.docs.values()].sort((a, b) => b.lastOpenedAt - a.lastOpenedAt)[0]?.id
     }
+    this.welcomeRecord = (await this.store.getSetting<{ id: string; text: string }>('welcome')) ?? null
+    let isWelcome = false
     if (!activeId) {
       const first = this.welcome?.()
+      isWelcome = Boolean(first)
       activeId = (first ? this.createDraft(first.map, first.title) : this.createDraft(createMap(this.texts().rootTopic))).id
     }
 
     this.activate(activeId)
+    if (isWelcome) this.rememberWelcome(activeId)
     const doc = this.activeDoc()
     if (doc && doc.savedText !== undefined && isDirty(doc)) this.addNotice({ kind: 'recovered', docId: doc.id })
     if (!this.store.persistent) this.addNotice({ kind: 'storage-unavailable' })
@@ -432,7 +438,34 @@ export class WorkspaceController {
   /** Opens a fresh copy of the welcome map. */
   openWelcome() {
     const welcome = this.welcome?.()
-    if (welcome) this.newDoc(welcome.map, welcome.title)
+    if (!welcome) return
+    this.newDoc(welcome.map, welcome.title)
+    if (this.activeId) this.rememberWelcome(this.activeId)
+  }
+
+  private rememberWelcome(id: string) {
+    const doc = this.docs.get(id)
+    if (!doc) return
+    this.welcomeRecord = { id, text: doc.workingText }
+    void this.store?.setSetting('welcome', this.welcomeRecord)
+  }
+
+  /**
+   * Called after the interface language changes: a welcome map nobody has
+   * edited is swapped for the version in the new language.
+   */
+  relocalizeWelcome() {
+    this.flush()
+    const record = this.welcomeRecord
+    const doc = record ? this.docs.get(record.id) : undefined
+    if (!record || !doc || !this.welcome || doc.workingText !== record.text) return
+    const fresh = this.welcome()
+    doc.title = fresh.title
+    doc.workingText = serializeMap(fresh.map)
+    void this.saveRecord(doc)
+    if (doc.id === this.activeId) this.activate(doc.id)
+    this.rememberWelcome(doc.id)
+    this.emit()
   }
 
   switchTo(id: string) {

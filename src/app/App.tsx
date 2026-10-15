@@ -88,6 +88,13 @@ export function App() {
     })
   const onCanvasChange = useCallback(() => controller.notifyChange(), [controller])
 
+  // An untouched welcome map follows the interface language.
+  useEffect(() => {
+    const onLanguageChanged = () => controller.relocalizeWelcome()
+    i18n.on('languageChanged', onLanguageChanged)
+    return () => i18n.off('languageChanged', onLanguageChanged)
+  }, [controller])
+
   // Global shortcuts and page lifecycle.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

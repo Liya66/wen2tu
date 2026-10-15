@@ -17,18 +17,9 @@ function readStoredLanguage(): Language | null {
   }
 }
 
-/** Saved preference first, then the browser's languages, then English. */
-export function detectLanguage(
-  stored: Language | null = readStoredLanguage(),
-  browserLanguages: readonly string[] = typeof navigator === 'undefined' ? [] : navigator.languages,
-): Language {
-  if (stored) return stored
-  for (const lang of browserLanguages) {
-    const lower = lang.toLowerCase()
-    if (lower.startsWith('zh')) return 'zh-CN'
-    if (lower.startsWith('en')) return 'en'
-  }
-  return 'en'
+/** The saved choice, otherwise Chinese (the app's primary audience). */
+export function detectLanguage(stored: Language | null = readStoredLanguage()): Language {
+  return stored ?? 'zh-CN'
 }
 
 export function setLanguage(language: Language): Promise<unknown> {
@@ -52,7 +43,7 @@ void i18n.use(initReactI18next).init({
     'zh-CN': { translation: zhCN },
   },
   lng: detectLanguage(),
-  fallbackLng: 'en',
+  fallbackLng: 'zh-CN',
   supportedLngs: [...LANGUAGES],
   interpolation: {
     // React already escapes rendered strings.

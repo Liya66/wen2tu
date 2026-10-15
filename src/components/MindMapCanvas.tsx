@@ -19,7 +19,11 @@ import { lightVariantOf, systemTheme } from '../features/appearance/themes'
 import type { Direction, MapNode, MapTheme, MindMap, ThemeVar } from '../features/mindmap/types'
 import type { CanvasAdapter } from '../features/workspace/workspaceController'
 
-const ENGINE_LOCALES: Record<Language, LangPack> = { en: engineEn, 'zh-CN': engineZh }
+const ENGINE_LOCALES: Record<Language, LangPack> = {
+  en: engineEn,
+  // House wording: “上级节点”, not “父节点”.
+  'zh-CN': { ...engineZh, addParent: '插入上级节点' },
+}
 
 /** Context menu item ids rendered by Mind Elixir, and the locale key for each. */
 const MENU_ITEMS: Array<[string, keyof LangPack]> = [

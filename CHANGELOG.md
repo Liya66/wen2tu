@@ -11,7 +11,8 @@
 - Import Markdown (headings, nested lists, GFM task lists) and OPML.
 - Export PNG, SVG and Markdown outlines. Images carry the map background; transparent exports use a light version of dark color schemes.
 - English and Simplified Chinese interface.
-- A bilingual welcome map on first visit (what wen2tu is, use cases, quick guide, files, open source); reopen it from Settings.
+- Chinese interface by default (English one click away).
+- A welcome map on first visit (about wen2tu, AI tip, shortcuts, files, next steps, open source) that follows the interface language until edited; reopen it from Settings.
 - Large maps open zoomed out to fit the screen (down to 60%).
 - Bunny logo, app icons and a warm interface palette taken from the logo; maps use the matching “wen2tu” / “wen2tu Night” color schemes by default.
 - 12 color schemes plus custom colors and branch palettes; layout direction and compact spacing.

@@ -342,4 +342,26 @@ describe('WorkspaceController', () => {
     second.openWelcome()
     expect(second.getState().docs.map((d) => d.title)).toEqual(['Welcome 2', 'Welcome'])
   })
+
+  it('swaps an untouched welcome map when the language changes', async () => {
+    let language = 'zh'
+    const welcome = () => ({ title: language === 'zh' ? '欢迎' : 'Welcome', map: createMap(language === 'zh' ? '你好' : 'Hello') })
+    const controller = new WorkspaceController(texts, async () => new MemoryStore(), welcome)
+    const canvas = new FakeCanvas()
+    controller.attachCanvas(canvas)
+    await vi.waitFor(() => expect(controller.getState().ready).toBe(true))
+
+    language = 'en'
+    controller.relocalizeWelcome()
+    expect(controller.getState().active?.title).toBe('Welcome')
+    expect(canvas.map.nodeData.topic).toBe('Hello')
+
+    // Once edited, it is the user's map and stays as it is.
+    canvas.edit('Mine now')
+    controller.notifyChange()
+    language = 'zh'
+    controller.relocalizeWelcome()
+    expect(controller.getState().active?.title).toBe('Welcome')
+    expect(canvas.map.nodeData.topic).toBe('Mine now')
+  })
 })
