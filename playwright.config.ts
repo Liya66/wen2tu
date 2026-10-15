@@ -1,7 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
 
 const CI = Boolean(process.env.CI)
-const PORT = 4173
+// A dedicated port, always rebuilt, so a stale `npm run preview` is never tested by mistake.
+const PORT = 4183
 
 /**
  * End-to-end tests run against the production build served by `vite preview`,
@@ -27,7 +28,7 @@ export default defineConfig({
   webServer: {
     command: `npm run build && npm run preview -- --port ${PORT} --strictPort`,
     url: `http://localhost:${PORT}`,
-    reuseExistingServer: !CI,
+    reuseExistingServer: false,
     timeout: 180_000,
   },
 })

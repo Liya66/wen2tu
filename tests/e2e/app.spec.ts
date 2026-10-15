@@ -305,3 +305,22 @@ test('templates, color schemes and topic styles are saved in the file', async ({
   expect(timeline.style).toMatchObject({ borderRadius: '0px', fontWeight: 'bold' })
   expect(timeline.style.border).toMatch(/^2px solid /)
 })
+
+test('exported images carry the theme background so text stays readable', async ({ page }) => {
+  for (const [scheme, background] of [
+    ['dark', 'rgb(31, 32, 39)'],
+    ['light', 'rgb(253, 250, 245)'],
+  ] as const) {
+    await page.emulateMedia({ colorScheme: scheme })
+    await openApp(page)
+    await addChildToRoot(page, `Readable ${scheme}`)
+    await page.getByRole('button', { name: 'Export' }).click()
+    const downloadPromise = page.waitForEvent('download')
+    await page.getByRole('menuitem', { name: 'SVG image' }).click()
+    const svg = await readFile(await (await downloadPromise).path(), 'utf8')
+    // The image must paint the theme background itself; viewers show a
+    // transparent SVG on their own (usually white) background.
+    const escaped = background.replace(/[()]/g, '\\$&')
+    expect(svg, scheme).toMatch(new RegExp(`background-color:\\s?${escaped}`))
+  }
+})

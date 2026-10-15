@@ -10,11 +10,20 @@ export async function exportImage(
   backgroundColor: string,
 ): Promise<Blob> {
   const { snapdom } = await import('@zumer/snapdom')
-  const capture = await snapdom(target, {
-    backgroundColor,
-    // Higher resolution for raster output so text stays crisp when zoomed.
-    scale: format === 'png' ? 2 : 1,
-    embedFonts: true,
-  })
-  return capture.toBlob({ format })
+  // snapdom's backgroundColor only applies to raster formats; an SVG would be
+  // transparent and show light (dark-theme) text on a viewer's white page.
+  // Painting the background on the captured element bakes it into every format.
+  const previous = target.style.backgroundColor
+  target.style.backgroundColor = backgroundColor
+  try {
+    const capture = await snapdom(target, {
+      backgroundColor,
+      // Higher resolution for raster output so text stays crisp when zoomed.
+      scale: format === 'png' ? 2 : 1,
+      embedFonts: true,
+    })
+    return await capture.toBlob({ format })
+  } finally {
+    target.style.backgroundColor = previous
+  }
 }
