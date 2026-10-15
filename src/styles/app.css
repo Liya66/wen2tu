@@ -612,6 +612,12 @@ kbd {
   }
 }
 
+/* Map-wide shape for boxed subtopics that have no corners of their own
+   (the variable is set by the canvas; 3px is Mind Elixir's default). */
+.canvas .map-container me-children me-tpc {
+  border-radius: var(--wen2tu-sub-radius, 3px);
+}
+
 /* ---- style panel ---- */
 
 .style-panel {
@@ -716,14 +722,16 @@ kbd {
 
 .color-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
+  flex-wrap: nowrap;
+  gap: 3px;
 }
 
 .swatch {
   position: relative;
-  width: 20px;
-  height: 20px;
+  flex: 0 0 auto;
+  /* 11 swatches (default + 9 colors + picker) stay on one row, even with a scrollbar. */
+  width: 19px;
+  height: 19px;
   padding: 0;
   border: 1px solid rgb(0 0 0 / 15%);
   border-radius: 50%;

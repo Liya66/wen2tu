@@ -2,21 +2,9 @@ import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toHexColor } from '../features/appearance/nodeStyles'
 
-// Logo colors first (ink, white, blossom, carrot, leaf, pebble, cream), then a few extras.
-const SWATCHES = [
-  '#2c2d35',
-  '#ffffff',
-  '#fc9e9f',
-  '#ff9341',
-  '#77b26c',
-  '#a7a6a9',
-  '#fdeccd',
-  '#e5484d',
-  '#f5c542',
-  '#3b82f6',
-  '#8b5cf6',
-  '#14b8a6',
-]
+// Logo colors (ink, white, blossom, carrot, leaf, pebble, cream) plus red and yellow.
+// Nine swatches, the optional "default" and the picker fit on one row.
+const SWATCHES = ['#2c2d35', '#ffffff', '#fc9e9f', '#ff9341', '#77b26c', '#a7a6a9', '#fdeccd', '#e5484d', '#f5c542']
 
 interface Props {
   label: string

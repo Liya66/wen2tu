@@ -154,6 +154,16 @@ describe('sanitizing untrusted content', () => {
   })
 })
 
+describe('map shape', () => {
+  it('keeps a valid shape and ignores unknown ones', () => {
+    const withShape = (shape: unknown) =>
+      parseDocument(JSON.stringify({ format: 'wen2tu', version: 1, map: { nodeData: { id: 'r', topic: 'r' }, shape } })).map.shape
+    expect(withShape('pill')).toBe('pill')
+    expect(withShape('hexagon')).toBeUndefined()
+    expect(withShape(undefined)).toBeUndefined()
+  })
+})
+
 describe('file names', () => {
   it('derives titles from file names', () => {
     expect(titleFromFileName('plan.mind.json')).toBe('plan')

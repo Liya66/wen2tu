@@ -114,6 +114,8 @@ export interface MindMap {
   direction?: Direction
   compact?: boolean
   theme?: MapTheme
+  /** Corner shape for the center, first-level and boxed topics. */
+  shape?: 'square' | 'rounded' | 'pill'
 }
 
 export interface MindDocument {

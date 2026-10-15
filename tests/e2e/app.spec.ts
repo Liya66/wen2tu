@@ -429,3 +429,25 @@ test('dragging a topic onto another moves its whole branch', async ({ page }) =>
   await expect(branchB.locator('me-tpc').filter({ hasText: /^A1$/ })).toBeVisible()
   await expect(page.getByTestId('save-status')).toHaveText(/Draft/)
 })
+
+test('map shape is saved, and color rows stay on one line', async ({ page }) => {
+  await useFakeFileSystem(page)
+  await openApp(page)
+  await addChildToRoot(page, 'Shaped')
+  await page.getByRole('button', { name: 'Style' }).click()
+  const panel = page.getByRole('complementary', { name: 'Style' })
+  await panel.getByRole('tab', { name: 'Map' }).click()
+  await panel.getByRole('radio', { name: 'Square' }).click()
+  await expect(page.locator('me-root me-tpc')).toHaveCSS('border-radius', '0px')
+
+  for (const row of await panel.locator('.color-row').all()) {
+    const tops = await row.locator('.swatch').evaluateAll((els) => els.map((el) => el.getBoundingClientRect().top))
+    expect(new Set(tops.map(Math.round)).size).toBe(1)
+  }
+
+  await page.keyboard.press('ControlOrMeta+s')
+  await expect(page.getByTestId('save-status')).toHaveText(/^Saved to/)
+  const saved = JSON.parse(await page.evaluate(() => Object.values(window.__fs.files)[0]))
+  expect(saved.map.shape).toBe('square')
+  expect(saved.map.theme).toBeUndefined()
+})

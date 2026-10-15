@@ -97,3 +97,30 @@ export function tint(hex: string, amount = 0.25): string {
       .join('')
   )
 }
+
+export interface MainBranchParams {
+  pT: number
+  pL: number
+  pW: number
+  pH: number
+  cT: number
+  cL: number
+  cW: number
+  cH: number
+  direction: 'lhs' | 'rhs' | string
+}
+
+/**
+ * SVG path from the center topic to a first-level topic. It leaves the center
+ * topic horizontally from the middle of its side, so it never crosses the
+ * center topic's text (the engine's own path starts inside it).
+ */
+export function mainBranchPath({ pT, pL, pW, pH, cT, cL, cW, cH, direction }: MainBranchParams): string {
+  const lhs = direction === 'lhs'
+  const startX = lhs ? pL : pL + pW
+  const startY = pT + pH / 2
+  const endX = lhs ? cL + cW : cL
+  const endY = cT + cH / 2
+  const span = endX - startX
+  return `M ${startX} ${startY} C ${startX + span * 0.5} ${startY} ${startX + span * 0.2} ${endY} ${endX} ${endY}`
+}

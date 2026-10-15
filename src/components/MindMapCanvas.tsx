@@ -3,6 +3,7 @@ import MindElixir, {
   type MindElixirInstance,
   type NodeObj,
   type Operation,
+  type MainLineParams,
   type SubLineParams,
   type Theme,
   type Topic,
@@ -13,7 +14,7 @@ import { useEffect, useRef } from 'react'
 import type { Language } from '../i18n'
 import { fromEngineData } from '../features/mindmap/document'
 import { escapeHtml } from '../features/mindmap/sanitize'
-import { subBranchPath, topicKind } from '../features/appearance/branchPath'
+import { mainBranchPath, subBranchPath, topicKind } from '../features/appearance/branchPath'
 import { toHexColor, type StylePatch } from '../features/appearance/nodeStyles'
 import { lightVariantOf, systemTheme } from '../features/appearance/themes'
 import type { Direction, MapNode, MapTheme, MindMap, ThemeVar } from '../features/mindmap/types'
@@ -74,6 +75,9 @@ export interface EditorApi extends CanvasAdapter {
   setTheme(theme: MapTheme | undefined): void
   /** Shows a theme color without committing it (e.g. while dragging a color picker). */
   previewThemeVar(cssVar: ThemeVar, value: string): void
+  /** Map-wide topic shape; undefined uses the color scheme's corners. */
+  getShape(): MapShape | undefined
+  setShape(shape: MapShape | undefined): void
   getDirection(): Direction
   setDirection(direction: Direction): void
   isCompact(): boolean
@@ -90,14 +94,34 @@ export interface EditorApi extends CanvasAdapter {
 const MIN_OPEN_SCALE = 0.6
 
 type SubBranch = NonNullable<Theme['generateSubBranch']>
+type MainBranch = NonNullable<Theme['generateMainBranch']>
 
-function toEngineTheme(theme: MapTheme, generateSubBranch?: SubBranch): Theme {
+export type MapShape = NonNullable<MindMap['shape']>
+
+/** Corner radius per map shape: center topic, first-level topics, boxed subtopics. */
+const SHAPE_RADII: Record<MapShape, { root: string; main: string; sub: string }> = {
+  square: { root: '0px', main: '0px', sub: '0px' },
+  rounded: { root: '10px', main: '8px', sub: '8px' },
+  pill: { root: '999px', main: '999px', sub: '999px' },
+}
+
+function toEngineTheme(
+  theme: MapTheme,
+  branches?: { sub: SubBranch; main: MainBranch },
+  shape?: MapShape,
+): Theme {
+  const cssVar = { ...theme.cssVar }
+  if (shape) {
+    cssVar['--root-radius'] = SHAPE_RADII[shape].root
+    cssVar['--main-radius'] = SHAPE_RADII[shape].main
+  }
   return {
     name: theme.name,
     type: theme.type,
     palette: [...theme.palette],
-    cssVar: { ...theme.cssVar },
-    generateSubBranch,
+    cssVar,
+    generateSubBranch: branches?.sub,
+    generateMainBranch: branches?.main,
   }
 }
 
@@ -132,6 +156,8 @@ export function MindMapCanvas({ language, label, newTopicName, onReady, onChange
     const darkQuery = window.matchMedia('(prefers-color-scheme: dark)')
     /** The theme stored in the current map; undefined = follow the system. */
     let savedTheme: MapTheme | undefined
+    /** The map-wide topic shape; undefined = the color scheme's own corners. */
+    let savedShape: MapShape | undefined
 
     const mind = new MindElixir({
       el: element,
@@ -155,6 +181,11 @@ export function MindMapCanvas({ language, label, newTopicName, onReady, onChange
     // underlined) topics. The engine only passes geometry, so styled topics are
     // looked up by the position of their wrapper, indexed once per layout pass.
     const defaultSubBranch = mind.generateSubBranch
+    const defaultMainBranch = mind.generateMainBranch
+    const styledMainBranch: MainBranch = function (this: MindElixirInstance, params: MainLineParams) {
+      if (params.direction !== 'lhs' && params.direction !== 'rhs') return defaultMainBranch.call(this, params)
+      return mainBranchPath(params)
+    }
     let styledIndex: Map<string, Topic> | null = null
     const engineLinkDiv = mind.linkDiv
     mind.linkDiv = function (...args) {
@@ -227,6 +258,7 @@ export function MindMapCanvas({ language, label, newTopicName, onReady, onChange
       if (operation.name !== 'beginEdit') notify()
       reportSelection()
     }
+    const branches = { sub: styledSubBranch, main: styledMainBranch }
     mind.bus.addListener('operation', onOperation)
     mind.bus.addListener('expandNode', notify)
     mind.bus.addListener('changeDirection', notify)
@@ -254,7 +286,11 @@ export function MindMapCanvas({ language, label, newTopicName, onReady, onChange
     mind.bus.addListener('unselectNodes', reportSelection)
 
     const applyTheme = (refresh: boolean) => {
-      mind.changeTheme(toEngineTheme(savedTheme ?? systemTheme(darkQuery.matches), styledSubBranch), refresh)
+      mind.changeTheme(
+        toEngineTheme(savedTheme ?? systemTheme(darkQuery.matches), branches, savedShape),
+        refresh,
+      )
+      mind.container.style.setProperty('--wen2tu-sub-radius', savedShape ? SHAPE_RADII[savedShape].sub : '')
     }
     const onSystemThemeChange = () => {
       if (!savedTheme) applyTheme(true)
@@ -284,6 +320,7 @@ export function MindMapCanvas({ language, label, newTopicName, onReady, onChange
         delete data.theme
         const map = fromEngineData(data)
         if (savedTheme) map.theme = structuredClone(savedTheme)
+        if (savedShape) map.shape = savedShape
         return map
       },
       load: (map: MindMap) => {
@@ -291,6 +328,7 @@ export function MindMapCanvas({ language, label, newTopicName, onReady, onChange
         mind.direction = map.direction ?? MindElixir.SIDE
         mind.compact = map.compact ?? false
         savedTheme = map.theme ? structuredClone(map.theme) : undefined
+        savedShape = map.shape
         applyTheme(false)
         mind.refresh(map as unknown as MindElixirData)
         mind.clearHistory?.()
@@ -314,7 +352,7 @@ export function MindMapCanvas({ language, label, newTopicName, onReady, onChange
         const swap = options.light && theme.type === 'dark'
         // Briefly re-render in the light version; not an edit, so no undo step
         // and the map is not marked as changed.
-        if (swap) mind.changeTheme(toEngineTheme(lightVariantOf(theme), styledSubBranch), true)
+        if (swap) mind.changeTheme(toEngineTheme(lightVariantOf(theme), branches, savedShape), true)
         try {
           return await capture(mind.nodes, getComputedStyle(mind.container).backgroundColor || '#ffffff')
         } finally {
@@ -330,6 +368,12 @@ export function MindMapCanvas({ language, label, newTopicName, onReady, onChange
         notify()
       },
       previewThemeVar: (cssVar, value) => mind.container.style.setProperty(cssVar, value),
+      getShape: () => savedShape,
+      setShape: (shape) => {
+        savedShape = shape
+        applyTheme(true)
+        notify()
+      },
       getDirection: () => mind.direction,
       setDirection: (direction) => {
         if (direction === mind.direction) return

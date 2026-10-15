@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { subBranchPath, tint, topicKind, type SubBranchParams } from './branchPath'
+import { mainBranchPath, subBranchPath, tint, topicKind, type SubBranchParams } from './branchPath'
 import { mergeLook, readLook } from './nodeStyles'
 
 // Parent wrapper at x 100–200 (topic 130–170 with a 30px gap), child wrapper at x 200–300.
@@ -71,5 +71,19 @@ describe('shapes without a border', () => {
     expect(mergeLook(readLook(), { shape: 'pill', fill: 'none' }).fill).toBe('none')
     expect(mergeLook(readLook({ border: '2px solid red' }), { shape: 'pill' }).fill).toBe('default')
     expect(mergeLook(readLook({ borderRadius: '999px' }), { fill: 'default' }).fill).toBe('default')
+  })
+})
+
+describe('mainBranchPath', () => {
+  // Center topic at x 100–300, y 0–60.
+  const root = { pT: 0, pL: 100, pW: 200, pH: 60 }
+
+  it('leaves the center topic from the middle of its side, never from inside it', () => {
+    const right = mainBranchPath({ ...root, cT: 200, cL: 400, cW: 80, cH: 30, direction: 'rhs' })
+    expect(right).toMatch(/^M 300 30 C /)
+    expect(right).toMatch(/ 400 215$/)
+    const left = mainBranchPath({ ...root, cT: -100, cL: -50, cW: 80, cH: 30, direction: 'lhs' })
+    expect(left).toMatch(/^M 100 30 C /)
+    expect(left).toMatch(/ 30 -85$/)
   })
 })

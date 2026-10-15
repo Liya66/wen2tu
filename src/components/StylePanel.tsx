@@ -7,13 +7,15 @@ import {
   lookToStyle,
   mergeLook,
   readLook,
+  readableTextOn,
+  toHexColor,
   type NodeLook,
 } from '../features/appearance/nodeStyles'
 import { tint } from '../features/appearance/branchPath'
 import { CUSTOM_COLOR_VARS, THEME_PRESETS, customizeTheme, withPalette } from '../features/appearance/themes'
 import type { Direction, MapTheme } from '../features/mindmap/types'
 import { ColorField } from './ColorField'
-import type { EditorApi, SelectedNode } from './MindMapCanvas'
+import type { EditorApi, MapShape, SelectedNode } from './MindMapCanvas'
 import { Segmented } from './Segmented'
 
 interface Props {
@@ -94,7 +96,15 @@ function NodeTab({ editor, selection }: { editor: EditorApi; selection: Selected
       if (current.border !== 'full' && current.border !== 'underline') current.borderColor = node.lineColor
       if (current.fill !== 'solid') current.fillColor = tint(node.lineColor)
     }
-    return lookToStyle(mergeLook(current, changes), node.depth)
+    const next = mergeLook(current, changes)
+    // The center topic's text is colored for its fill; without a fill it has
+    // to read against the canvas instead (unless the user picked a color).
+    if (node.depth === 0 && !('textColor' in changes)) {
+      const onCanvas = readableTextOn(toHexColor(editor.effectiveTheme().cssVar['--bgcolor'], '#ffffff'))
+      const auto = !current.textColor || current.textColor === onCanvas
+      if (auto) next.textColor = next.fill === 'none' ? onCanvas : current.fill === 'none' ? undefined : next.textColor
+    }
+    return lookToStyle(next, node.depth)
   }
   const apply = (changes: Partial<NodeLook>) => editor.applyNodeStyle(patchFor(changes))
   const preview = (changes: Partial<NodeLook>) => editor.previewNodeStyle(patchFor(changes))
@@ -306,6 +316,23 @@ function MapTab({ editor, onChanged }: { editor: EditorApi; onChanged: () => voi
             </button>
           )}
         </div>
+      </section>
+
+      <section className="panel-section">
+        <Segmented<MapShape | 'default'>
+          label={t('style.shape')}
+          value={editor.getShape() ?? 'default'}
+          options={[
+            { value: 'default', label: t('style.default') },
+            { value: 'square', label: t('style.square') },
+            { value: 'rounded', label: t('style.rounded') },
+            { value: 'pill', label: t('style.pill') },
+          ]}
+          onChange={(shape) => {
+            editor.setShape(shape === 'default' ? undefined : shape)
+            onChanged()
+          }}
+        />
       </section>
 
       <section className="panel-section">

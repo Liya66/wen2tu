@@ -88,6 +88,7 @@ const mapSchema = z.object({
   direction: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]).optional(),
   compact: z.boolean().optional(),
   theme: z.unknown().optional(),
+  shape: z.enum(['square', 'rounded', 'pill']).optional().catch(undefined),
 })
 
 const themeSchema = z.object({
@@ -266,5 +267,6 @@ export function sanitizeMap(input: unknown): MindMap {
   if (raw.compact) map.compact = true
   const theme = sanitizeTheme(raw.theme)
   if (theme) map.theme = theme
+  if (raw.shape) map.shape = raw.shape
   return map
 }
