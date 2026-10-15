@@ -28,7 +28,9 @@
     "exportSvgTransparent": "SVG, transparent",
     "exportTransparentHint": "No background; dark color schemes use their light version.",
     "welcome": "Welcome map",
-    "newFromText": "From pasted text…"
+    "newFromText": "From pasted text…",
+    "exportHtml": "HTML (interactive)",
+    "exportHtmlHint": "One file that opens in any browser: zoom, fold branches, click links. Can be imported back."
   },
   "sidebar": {
     "title": "Maps",
@@ -103,7 +105,7 @@
   },
   "fileTypes": {
     "native": "wen2tu mind map",
-    "supported": "wen2tu maps (.mind.json), Markdown, OPML"
+    "supported": "wen2tu maps (.mind.json), Markdown, OPML, exported HTML"
   },
   "shortcuts": {
     "title": "Keyboard shortcuts",

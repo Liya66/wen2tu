@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "predev": "npm run build:viewer",
+    "build": "npm run build:viewer && tsc -b && vite build",
+    "build:viewer": "vite build --config vite.viewer.config.ts --logLevel warn",
     "preview": "vite preview",
     "lint": "oxlint",
     "typecheck": "tsc -b",

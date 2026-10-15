@@ -1,0 +1,34 @@
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family:
+    system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC',
+    sans-serif;
+}
+
+#map {
+  width: 100vw;
+  height: 100vh;
+}
+
+.wen2tu-badge {
+  position: fixed;
+  left: 12px;
+  bottom: 10px;
+  z-index: 10;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 85%);
+  color: #2c2d35;
+  font-size: 12px;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 15%);
+}
+
+.wen2tu-badge:hover {
+  text-decoration: underline;
+}

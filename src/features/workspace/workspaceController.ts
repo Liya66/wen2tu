@@ -840,6 +840,34 @@ export class WorkspaceController {
     }
   }
 
+  /**
+   * Exports a single, self-contained HTML file: an interactive, read-only view
+   * of the map (pan, zoom, expand/collapse, links) that also carries the map
+   * data, so it can be imported back into wen2tu.
+   */
+  async exportHtml() {
+    const doc = this.activeDoc()
+    if (!doc) return
+    this.flush()
+    try {
+      const [{ buildHtml }, { loadViewerAssets }, { REPO_URL }] = await Promise.all([
+        import('../import-export/htmlExport'),
+        import('../import-export/viewerAssets'),
+        import('../../config'),
+      ])
+      const html = buildHtml({
+        doc: parseDocument(doc.workingText),
+        title: doc.title,
+        language: document.documentElement.lang || 'zh-CN',
+        assets: await loadViewerAssets(),
+        homepage: REPO_URL,
+      })
+      downloadText(html, `${fileNameForTitle(doc.title).replace(/\.mind\.json$/, '')}.html`, 'text/html')
+    } catch (error) {
+      this.showError(error)
+    }
+  }
+
   exportMarkdown() {
     const doc = this.activeDoc()
     if (!doc || !this.canvas) return

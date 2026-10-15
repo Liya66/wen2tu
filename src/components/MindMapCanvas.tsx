@@ -3,9 +3,6 @@ import MindElixir, {
   type MindElixirInstance,
   type NodeObj,
   type Operation,
-  type MainLineParams,
-  type SubLineParams,
-  type Theme,
   type Topic,
 } from 'mind-elixir'
 import { en as engineEn, zh_CN as engineZh, type LangPack } from 'mind-elixir/i18n'
@@ -14,11 +11,16 @@ import { useEffect, useRef } from 'react'
 import type { Language } from '../i18n'
 import { shortcut } from '../utils/platform'
 import { parseOutline } from '../features/import-export/outlineText'
+import {
+  fitToScreen,
+  installMapRendering,
+  toEngineTheme,
+  type MapShape,
+} from '../features/rendering/mapRendering'
 import { fromEngineData } from '../features/mindmap/document'
 import { sanitizeNodeTree } from '../features/mindmap/schema'
 import { escapeHtml } from '../features/mindmap/sanitize'
-import { mainBranchPath, subBranchPath, topicKind } from '../features/appearance/branchPath'
-import { toHexColor, type StylePatch } from '../features/appearance/nodeStyles'
+import type { StylePatch } from '../features/appearance/nodeStyles'
 import { lightVariantOf, systemTheme } from '../features/appearance/themes'
 import type { Direction, MapNode, MapTheme, MindMap, ThemeVar } from '../features/mindmap/types'
 import type { CanvasAdapter } from '../features/workspace/workspaceController'
@@ -57,6 +59,8 @@ function applyEngineLocale(mind: MindElixirInstance, locale: LangPack, language:
     if (label) label.textContent = locale[key]
   }
 }
+
+export type { MapShape }
 
 /** A selected topic, as the style panel sees it. */
 export interface SelectedNode {
@@ -100,41 +104,6 @@ const PASTE_MENU_ID = 'wen2tu-paste-outline'
 
 /** Marker Mind Elixir puts in copied topics' clipboard JSON. */
 const ENGINE_CLIPBOARD_MAGIC = 'MIND-ELIXIR-WAIT-COPY'
-
-/** Lowest zoom used when opening a map that is larger than the screen. */
-const MIN_OPEN_SCALE = 0.6
-
-type SubBranch = NonNullable<Theme['generateSubBranch']>
-type MainBranch = NonNullable<Theme['generateMainBranch']>
-
-export type MapShape = NonNullable<MindMap['shape']>
-
-/** Corner radius per map shape: center topic, first-level topics, boxed subtopics. */
-const SHAPE_RADII: Record<MapShape, { root: string; main: string; sub: string }> = {
-  square: { root: '0px', main: '0px', sub: '0px' },
-  rounded: { root: '10px', main: '8px', sub: '8px' },
-  pill: { root: '999px', main: '999px', sub: '999px' },
-}
-
-function toEngineTheme(
-  theme: MapTheme,
-  branches?: { sub: SubBranch; main: MainBranch },
-  shape?: MapShape,
-): Theme {
-  const cssVar = { ...theme.cssVar }
-  if (shape) {
-    cssVar['--root-radius'] = SHAPE_RADII[shape].root
-    cssVar['--main-radius'] = SHAPE_RADII[shape].main
-  }
-  return {
-    name: theme.name,
-    type: theme.type,
-    palette: [...theme.palette],
-    cssVar,
-    generateSubBranch: branches?.sub,
-    generateMainBranch: branches?.main,
-  }
-}
 
 function depthOf(node: NodeObj): number {
   let depth = 0
@@ -219,53 +188,8 @@ export function MindMapCanvas({
     mind.init(MindElixir.new(''))
     mindRef.current = mind
 
-    // Branch lines (left/right layouts) are drawn by subBranchPath: attached
-    // to topic edges, with no underline under styled (boxed, filled or
-    // underlined) topics. The engine only passes geometry, so styled topics are
-    // looked up by the position of their wrapper, indexed once per layout pass.
-    const defaultSubBranch = mind.generateSubBranch
-    const defaultMainBranch = mind.generateMainBranch
-    const styledMainBranch: MainBranch = function (this: MindElixirInstance, params: MainLineParams) {
-      if (params.direction !== 'lhs' && params.direction !== 'rhs') return defaultMainBranch.call(this, params)
-      return mainBranchPath(params)
-    }
-    let styledIndex: Map<string, Topic> | null = null
-    const engineLinkDiv = mind.linkDiv
-    mind.linkDiv = function (...args) {
-      styledIndex = null
-      return engineLinkDiv.apply(this, args)
-    }
-    // With a map-wide shape every subtopic is drawn boxed (see app.css), except
-    // where the topic's own style says otherwise.
-    const kindOf = (style: MapNode['style']) =>
-      topicKind(style) ?? (savedShape && style?.border !== 'none' ? ('box' as const) : null)
-    const styledTopicAt = (top: number, left: number, width: number, height: number) => {
-      if (!styledIndex) {
-        styledIndex = new Map()
-        for (const tpc of mind.nodes.querySelectorAll<Topic>('me-children me-tpc')) {
-          if (!kindOf(tpc.nodeObj?.style as MapNode['style'])) continue
-          const wrapper = tpc.parentElement!
-          const key = `${wrapper.offsetTop},${wrapper.offsetLeft},${wrapper.offsetWidth},${wrapper.offsetHeight}`
-          if (!styledIndex.has(key)) styledIndex.set(key, tpc)
-        }
-      }
-      return styledIndex.get(`${top},${left},${width},${height}`)
-    }
-    const styledSubBranch: SubBranch = function (this: MindElixirInstance, params: SubLineParams) {
-      if (params.direction !== 'lhs' && params.direction !== 'rhs') return defaultSubBranch.call(this, params)
-      const childTopic = styledTopicAt(params.cT, params.cL, params.cW, params.cH)
-      const parentTopic = params.isFirst ? undefined : styledTopicAt(params.pT, params.pL, params.pW, params.pH)
-      const gap = parseInt(this.container.style.getPropertyValue('--node-gap-x')) || 30
-      const child = childTopic && {
-        kind: kindOf(childTopic.nodeObj.style as MapNode['style'])!,
-        top: params.cT + childTopic.offsetTop,
-        left: params.cL + childTopic.offsetLeft,
-        width: childTopic.offsetWidth,
-        height: childTopic.offsetHeight,
-      }
-      const parentKind = parentTopic ? (kindOf(parentTopic.nodeObj.style as MapNode['style']) ?? undefined) : undefined
-      return subBranchPath(params, gap, child, parentKind)
-    }
+    // wen2tu's branch lines, shapes and borders (shared with exported HTML).
+    const rendering = installMapRendering(mind, () => savedShape)
 
     const notify = () => callbacks.current.onChange()
 
@@ -305,7 +229,6 @@ export function MindMapCanvas({
       if (operation.name !== 'beginEdit') notify()
       reportSelection()
     }
-    const branches = { sub: styledSubBranch, main: styledMainBranch }
 
     /** Inserts topics (with their subtopics) under the selected topic as one undo step. */
     const insertUnderSelection = (nodes: MapNode[]) => {
@@ -357,51 +280,12 @@ export function MindMapCanvas({
     mind.bus.addListener('operation', onOperation)
     mind.bus.addListener('expandNode', notify)
     mind.bus.addListener('changeDirection', notify)
-    // The engine paints first-level topics' borders in their branch color on
-    // every layout. Remember that color (subtopics inherit it), then let a
-    // border chosen in the style panel win.
-    const mainBranchColors = new WeakMap<NodeObj, string>()
-    const afterLinkDiv = () => {
-      for (const tpc of mind.nodes.querySelectorAll<Topic>('me-main > me-wrapper > me-parent > me-tpc')) {
-        if (tpc.style.borderColor) {
-          const color = toHexColor(tpc.style.borderColor)
-          mainBranchColors.set(tpc.nodeObj, color)
-          // Boxed subtopics (map-wide shape) outline themselves in their branch color.
-          tpc.closest<HTMLElement>('me-wrapper')?.style.setProperty('--wen2tu-branch', color)
-        }
-        const style = tpc.nodeObj?.style as MapNode['style'] | undefined
-        if (style?.border) tpc.style.border = style.border
-        if (style?.borderBottom) tpc.style.borderBottom = style.borderBottom
-      }
-    }
-    const afterLinkDivSubBranches = () => {
-      for (const tpc of mind.nodes.querySelectorAll<Topic>('me-children me-tpc')) {
-        const color = tpc.nodeObj?.branchColor
-        if (color) tpc.closest<HTMLElement>('me-wrapper')?.style.setProperty('--wen2tu-branch', color)
-      }
-    }
-    mind.bus.addListener('linkDiv', afterLinkDiv)
-    mind.bus.addListener('linkDiv', afterLinkDivSubBranches)
-    const lineColorOf = (node: NodeObj): string | undefined => {
-      for (let current: NodeObj | undefined = node; current?.parent; current = current.parent) {
-        if (current.branchColor) return current.branchColor
-        if (!current.parent.parent) return mainBranchColors.get(current)
-      }
-      return undefined
-    }
+    const lineColorOf = rendering.lineColorOf
     mind.bus.addListener('selectNodes', reportSelection)
     mind.bus.addListener('unselectNodes', reportSelection)
 
     const applyTheme = (refresh: boolean) => {
-      // The shape class changes topic sizes (boxed subtopics get padding and a
-      // border), so it must be in place before changeTheme lays out and draws
-      // the branch lines; otherwise lines are measured against the old sizes.
-      mind.container.style.setProperty('--wen2tu-sub-radius', savedShape ? SHAPE_RADII[savedShape].sub : '')
-      mind.container.classList.toggle('wen2tu-shaped', Boolean(savedShape))
-      mind.changeTheme(
-        toEngineTheme(savedTheme ?? systemTheme(darkQuery.matches), branches, savedShape),
-        refresh,
-      )
+      rendering.applyTheme(savedTheme ?? systemTheme(darkQuery.matches), refresh)
     }
     const onSystemThemeChange = () => {
       if (!savedTheme) applyTheme(true)
@@ -443,14 +327,7 @@ export function MindMapCanvas({
         applyTheme(false)
         mind.refresh(map as unknown as MindElixirData)
         mind.clearHistory?.()
-        mind.scale(1)
-        // Open large maps zoomed out to fit, but never so far that text gets hard to read.
-        const fit = Math.min(
-          mind.container.offsetWidth / mind.nodes.offsetWidth,
-          mind.container.offsetHeight / mind.nodes.offsetHeight,
-        )
-        if (fit < 1) mind.scale(Math.max(MIN_OPEN_SCALE, fit))
-        mind.toCenter()
+        fitToScreen(mind)
         reportSelection()
         return adapter.getMap()
       },
@@ -463,7 +340,7 @@ export function MindMapCanvas({
         const swap = options.light && theme.type === 'dark'
         // Briefly re-render in the light version; not an edit, so no undo step
         // and the map is not marked as changed.
-        if (swap) mind.changeTheme(toEngineTheme(lightVariantOf(theme), branches, savedShape), true)
+        if (swap) rendering.applyTheme(lightVariantOf(theme), true)
         try {
           return await capture(mind.nodes, getComputedStyle(mind.container).backgroundColor || '#ffffff')
         } finally {

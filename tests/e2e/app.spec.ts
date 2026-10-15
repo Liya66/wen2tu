@@ -578,3 +578,51 @@ test.describe('Paste outline from the topic menu', () => {
     await expect(page.locator('#wen2tu-paste-outline span').first()).toHaveText('粘贴大纲')
   })
 })
+
+test('HTML export opens on its own, works offline, and imports back', async ({ page, context }) => {
+  await openApp(page)
+  await addChildToRoot(page, 'Branch')
+  await page.keyboard.press('Tab')
+  await page.keyboard.insertText('Leaf 叶子')
+  await page.keyboard.press('Enter')
+
+  await page.getByRole('button', { name: 'Export' }).click()
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('menuitem', { name: /HTML \(interactive\)/ }).click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toBe('Untitled map.html')
+  const htmlPath = await download.path()
+  const html = await readFile(htmlPath, 'utf8')
+
+  // Open the exported file in a fresh page, with the network blocked.
+  const viewer = await context.newPage()
+  const requests: string[] = []
+  await viewer.route('**/*', (route) => {
+    requests.push(route.request().url())
+    return route.abort()
+  })
+  const errors = trackConsoleErrors(viewer)
+  await viewer.setContent(html)
+  await expect(viewer.locator('me-root me-tpc')).toHaveText('Central topic')
+  await expect(viewer.locator('me-tpc').filter({ hasText: /^Leaf 叶子$/ })).toBeVisible()
+  expect(requests).toEqual([])
+  expect(errors).toEqual([])
+
+  // Read-only, but branches fold and unfold.
+  await viewer.locator('me-tpc').filter({ hasText: /^Branch$/ }).dblclick()
+  await expect(viewer.locator('#input-box')).toHaveCount(0)
+  await viewer.locator('me-epd').first().click()
+  await expect(viewer.locator('me-tpc').filter({ hasText: /^Leaf 叶子$/ })).toHaveCount(0)
+  await viewer.locator('me-epd').first().click()
+  await expect(viewer.locator('me-tpc').filter({ hasText: /^Leaf 叶子$/ })).toBeVisible()
+  await viewer.close()
+
+  // Import it back as an editable map.
+  await useFallbackFileApi(page)
+  await page.reload()
+  const chooserPromise = page.waitForEvent('filechooser')
+  await page.getByRole('button', { name: 'Import', exact: true }).click()
+  await (await chooserPromise).setFiles({ name: 'shared.html', mimeType: 'text/html', buffer: Buffer.from(html) })
+  await expect(page.getByRole('button', { name: /^shared/ })).toBeVisible()
+  await expect(page.locator('me-tpc').filter({ hasText: /^Leaf 叶子$/ })).toBeVisible()
+})

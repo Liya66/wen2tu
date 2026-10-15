@@ -2,7 +2,7 @@ import { parseDocument, titleFromFileName } from '../mindmap/document'
 import { DocumentError } from '../mindmap/errors'
 import type { MindMap } from '../mindmap/types'
 
-export type SourceKind = 'native' | 'markdown' | 'opml'
+export type SourceKind = 'native' | 'markdown' | 'opml' | 'html'
 
 /** Every file type wen2tu can open: its own maps plus importable outlines. */
 export const SUPPORTED_ACCEPT: Record<string, string[]> = {
@@ -11,6 +11,7 @@ export const SUPPORTED_ACCEPT: Record<string, string[]> = {
   'text/plain': ['.txt'],
   'text/x-opml': ['.opml'],
   'application/xml': ['.xml'],
+  'text/html': ['.html', '.htm'],
 }
 export const SUPPORTED_EXTENSIONS = Object.values(SUPPORTED_ACCEPT).flat()
 
@@ -19,6 +20,7 @@ export function detectKind(fileName: string): SourceKind | null {
   if (name.endsWith('.json')) return 'native'
   if (/\.(md|markdown|txt)$/.test(name)) return 'markdown'
   if (/\.(opml|xml)$/.test(name)) return 'opml'
+  if (/\.html?$/.test(name)) return 'html'
   return null
 }
 
@@ -46,6 +48,13 @@ export async function readSource(fileName: string, text: string): Promise<ReadRe
     case 'opml': {
       const { importOpml } = await import('./opmlImport')
       return { kind, title, map: importOpml(text, title) }
+    }
+    case 'html': {
+      // A map exported by wen2tu carries its data; any other page has none.
+      const { extractHtmlData } = await import('./htmlExport')
+      const data = extractHtmlData(text)
+      if (!data) throw new DocumentError('unsupported-file', fileName)
+      return { kind, title, map: parseDocument(data).map }
     }
     default:
       throw new DocumentError('unsupported-file', fileName)

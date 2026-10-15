@@ -10,6 +10,8 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+# Built by `npm run build:viewer`
+generated
 *.local
 
 # Editor directories and files

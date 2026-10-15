@@ -18,7 +18,7 @@
 - **A real editor.** Add, edit, drag, collapse and link nodes; undo and redo; keyboard shortcuts for everything common.
 - **Make it yours.** 12 color schemes, custom colors, 9 templates (project plan, SWOT, meeting notes…) and a style panel for topics: corners, outline or underline borders, fills, text color and size, branch colors.
 - **Bring your outlines.** Paste Markdown or an indented outline (e.g. from an AI chat) — onto a selected topic it becomes subtopics, otherwise a new map. Import Markdown and OPML files; a built-in prompt asks any AI for the right format.
-- **Share the result.** Export PNG, SVG or a Markdown outline. Images include the map background, or choose a transparent export (dark schemes switch to a light version for white pages).
+- **Share the result.** Export PNG, SVG, a Markdown outline, or an interactive HTML file — one file that opens offline in any browser (zoom, fold branches, click links) and can be imported back. Images include the map background, or choose a transparent export (dark schemes switch to a light version for white pages).
 - **Bilingual.** English and Simplified Chinese interface; switching never touches your content.
 
 ## Browser support

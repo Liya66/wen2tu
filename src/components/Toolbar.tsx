@@ -165,6 +165,11 @@ export function Toolbar({
               hint: t('toolbar.exportTransparentHint'),
               onSelect: () => void controller.exportImage('svg', { transparent: true }),
             },
+            {
+              label: t('toolbar.exportHtml'),
+              hint: t('toolbar.exportHtmlHint'),
+              onSelect: () => void controller.exportHtml(),
+            },
             { label: t('toolbar.exportMarkdown'), onSelect: () => controller.exportMarkdown() },
           ]}
         />

@@ -617,19 +617,6 @@ kbd {
   }
 }
 
-/* Map-wide shape for subtopics without corners of their own (the variable is
-   set by the canvas; 3px is Mind Elixir's default). */
-.canvas .map-container me-children me-tpc {
-  border-radius: var(--wen2tu-sub-radius, 3px);
-}
-
-/* With a map-wide shape, every subtopic is outlined in its branch color.
-   A topic's own style (inline) still wins. */
-.canvas .map-container.wen2tu-shaped me-children me-tpc {
-  border: 2px solid var(--wen2tu-branch, var(--main-color));
-  padding: 4px 10px;
-}
-
 /* ---- style panel ---- */
 
 .style-panel {

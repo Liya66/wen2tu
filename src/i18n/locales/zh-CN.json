@@ -28,7 +28,9 @@
     "exportSvgTransparent": "SVG 图片（透明背景）",
     "exportTransparentHint": "不带背景；深色配色按浅色版本导出。",
     "welcome": "欢迎导图",
-    "newFromText": "粘贴文字生成…"
+    "newFromText": "粘贴文字生成…",
+    "exportHtml": "HTML（可交互）",
+    "exportHtmlHint": "单个文件，任何浏览器都能打开：可缩放、折叠分支、点击链接，也能再导入文兔兔。"
   },
   "sidebar": {
     "title": "脑图",
@@ -103,7 +105,7 @@
   },
   "fileTypes": {
     "native": "文兔兔脑图",
-    "supported": "文兔兔脑图 (.mind.json)、Markdown、OPML"
+    "supported": "文兔兔脑图 (.mind.json)、Markdown、OPML、导出的 HTML"
   },
   "shortcuts": {
     "title": "键盘快捷键",

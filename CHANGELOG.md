@@ -10,7 +10,7 @@
 - Optional automatic saving to linked files.
 - Import Markdown (headings, nested lists, GFM task lists) and OPML.
 - Paste Markdown or indented outlines: onto a selected topic as subtopics (one undo step), or as a new map; “From pasted text…” dialog with a copyable AI prompt; “Paste outline” in the topic menu for people who don't use the shortcut.
-- Export PNG, SVG and Markdown outlines. Images carry the map background; transparent exports use a light version of dark color schemes.
+- Export PNG, SVG and Markdown outlines, and interactive HTML: a single offline file with a read-only viewer that carries the map data and imports back. Images carry the map background; transparent exports use a light version of dark color schemes.
 - English and Simplified Chinese interface.
 - Chinese interface by default (English one click away).
 - A welcome map on first visit (about wen2tu, AI tip, shortcuts, files, next steps, open source) that follows the interface language until edited; reopen it from Settings.
