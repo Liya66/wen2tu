@@ -15,7 +15,7 @@ import { fromEngineData } from '../features/mindmap/document'
 import { escapeHtml } from '../features/mindmap/sanitize'
 import { subBranchPath, topicKind } from '../features/appearance/branchPath'
 import { toHexColor, type StylePatch } from '../features/appearance/nodeStyles'
-import { systemTheme } from '../features/appearance/themes'
+import { lightVariantOf, systemTheme } from '../features/appearance/themes'
 import type { Direction, MapNode, MapTheme, MindMap, ThemeVar } from '../features/mindmap/types'
 import type { CanvasAdapter } from '../features/workspace/workspaceController'
 
@@ -294,12 +294,20 @@ export function MindMapCanvas({ language, label, newTopicName, onReady, onChange
       },
       undo: () => mind.undo(),
       redo: () => mind.redo(),
-      exportTarget: () => {
+      withExportView: async (options, capture) => {
         // Selection outlines should not end up in exported images.
         mind.clearSelection()
-        return mind.nodes
+        const theme = savedTheme ?? systemTheme(darkQuery.matches)
+        const swap = options.light && theme.type === 'dark'
+        // Briefly re-render in the light version; not an edit, so no undo step
+        // and the map is not marked as changed.
+        if (swap) mind.changeTheme(toEngineTheme(lightVariantOf(theme), styledSubBranch), true)
+        try {
+          return await capture(mind.nodes, getComputedStyle(mind.container).backgroundColor || '#ffffff')
+        } finally {
+          if (swap) applyTheme(true)
+        }
       },
-      backgroundColor: () => getComputedStyle(mind.container).backgroundColor || '#ffffff',
 
       getTheme: () => savedTheme,
       effectiveTheme: () => savedTheme ?? systemTheme(darkQuery.matches),

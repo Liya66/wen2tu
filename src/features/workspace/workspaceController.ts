@@ -26,8 +26,15 @@ export interface CanvasAdapter {
   load(map: MindMap): MindMap
   undo(): void
   redo(): void
-  exportTarget(): HTMLElement
-  backgroundColor(): string
+  /**
+   * Gets the map ready for an image export (no selection; with `light`, dark
+   * color schemes swapped for their light version), runs `capture` with the
+   * element to capture and its background color, then restores the view.
+   */
+  withExportView<T>(
+    options: { light: boolean },
+    capture: (target: HTMLElement, background: string) => Promise<T>,
+  ): Promise<T>
 }
 
 /** Strings the controller puts into user data (new map names, root topics). */
@@ -745,11 +752,17 @@ export class WorkspaceController {
 
   // ---- export ---------------------------------------------------------------
 
-  async exportImage(format: ImageFormat) {
+  /**
+   * Exports a PNG or SVG. `transparent` leaves out the background and uses
+   * the light version of dark color schemes, for pasting onto white pages.
+   */
+  async exportImage(format: ImageFormat, { transparent = false } = {}) {
     const doc = this.activeDoc()
     if (!doc || !this.canvas) return
     try {
-      const blob = await exportImage(this.canvas.exportTarget(), format, this.canvas.backgroundColor())
+      const blob = await this.canvas.withExportView({ light: transparent }, (target, background) =>
+        exportImage(target, format, transparent ? null : background),
+      )
       downloadBlob(blob, `${fileNameForTitle(doc.title).replace(/\.mind\.json$/, '')}.${format}`)
     } catch (error) {
       this.showError(error)

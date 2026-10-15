@@ -267,3 +267,68 @@ export function customizeTheme(base: MapTheme, cssVar: ThemeVar, value: string):
 export function withPalette(base: MapTheme, palette: string[]): MapTheme {
   return { ...base, name: 'custom', palette: [...palette], cssVar: { ...base.cssVar } }
 }
+
+/** Hand-made light partners for dark presets. */
+const LIGHT_PARTNERS: Record<string, string> = { 'bunny-night': 'bunny', dark: 'classic' }
+
+function channels(hex: string): [number, number, number] | null {
+  const match = /^#([0-9a-f]{6})$/i.exec(hex.trim())
+  if (!match) return null
+  const value = parseInt(match[1], 16)
+  return [(value >> 16) & 255, (value >> 8) & 255, value & 255]
+}
+
+function luminance([r, g, b]: [number, number, number]): number {
+  const linear = (c: number) => {
+    const s = c / 255
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4
+  }
+  return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b)
+}
+
+/** WCAG contrast ratio of a color against white. */
+export function contrastOnWhite(hex: string): number {
+  const rgb = channels(hex)
+  return rgb ? 1.05 / (luminance(rgb) + 0.05) : 1
+}
+
+/** Darkens a color just enough to reach `ratio` against white. */
+export function darkenForWhite(hex: string, ratio = 3): string {
+  const rgb = channels(hex)
+  if (!rgb) return hex
+  let current = rgb
+  for (let step = 0; step < 20 && 1.05 / (luminance(current) + 0.05) < ratio; step++) {
+    current = current.map((c) => Math.round(c * 0.9)) as [number, number, number]
+  }
+  return '#' + current.map((c) => c.toString(16).padStart(2, '0')).join('')
+}
+
+/**
+ * The version of a theme to use on a white or transparent page. Light themes
+ * are returned as they are. Dark presets with a designed partner use it;
+ * other dark themes (including custom ones) get dark text, white topics and
+ * branch colors darkened until they are visible on white.
+ */
+export function lightVariantOf(theme: MapTheme): MapTheme {
+  if (theme.type === 'light') return theme
+  const partner = LIGHT_PARTNERS[theme.name]
+  if (partner) return structuredClone(findPreset(partner)!)
+
+  const rootFill = theme.cssVar['--root-bgcolor'] ?? '#2c2d35'
+  // A pale center topic (e.g. cream on a dark page) would vanish on white.
+  const keepRoot = contrastOnWhite(rootFill) >= 3
+  return makeTheme(`${theme.name}-light`, {
+    type: 'light',
+    background: '#ffffff',
+    text: '#3a3a44',
+    rootText: keepRoot ? (theme.cssVar['--root-color'] ?? '#ffffff') : '#ffffff',
+    rootFill: keepRoot ? rootFill : '#2c2d35',
+    mainText: '#2c2d35',
+    mainFill: '#ffffff',
+    selected: theme.cssVar['--selected'] ?? '#ff9341',
+    accent: darkenForWhite(theme.cssVar['--accent-color'] ?? '#ff9341'),
+    palette: theme.palette.map((color) => darkenForWhite(color)),
+    mainRadius: theme.cssVar['--main-radius'],
+    rootRadius: theme.cssVar['--root-radius'],
+  })
+}

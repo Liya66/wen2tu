@@ -23,7 +23,10 @@
     "language": "Language",
     "style": "Style",
     "newBlank": "Blank map",
-    "newFromTemplate": "From template…"
+    "newFromTemplate": "From template…",
+    "exportPngTransparent": "PNG, transparent",
+    "exportSvgTransparent": "SVG, transparent",
+    "exportTransparentHint": "No background; dark color schemes use their light version."
   },
   "sidebar": {
     "title": "Maps",

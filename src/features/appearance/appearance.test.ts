@@ -3,7 +3,16 @@ import { parseDocument, serializeMap } from '../mindmap/document'
 import type { MapNode } from '../mindmap/types'
 import { CLEAR_STYLE, lookToStyle, mergeLook, readLook, readableTextOn, toHexColor } from './nodeStyles'
 import { TEMPLATES, createMapFromTemplate } from './templates'
-import { THEME_PRESETS, customizeTheme, findPreset, systemTheme, withPalette } from './themes'
+import {
+  THEME_PRESETS,
+  contrastOnWhite,
+  customizeTheme,
+  darkenForWhite,
+  findPreset,
+  lightVariantOf,
+  systemTheme,
+  withPalette,
+} from './themes'
 
 describe('themes', () => {
   it('every preset survives saving and loading unchanged', () => {
@@ -131,5 +140,39 @@ describe('templates', () => {
   it('creates fresh ids every time', () => {
     const template = TEMPLATES.find((t) => t.id === 'project')!
     expect(createMapFromTemplate(template, 'en').nodeData.id).not.toBe(createMapFromTemplate(template, 'en').nodeData.id)
+  })
+})
+
+describe('light versions for transparent export', () => {
+  it('keeps light themes and uses designed partners', () => {
+    const ocean = findPreset('ocean')!
+    expect(lightVariantOf(ocean)).toBe(ocean)
+    expect(lightVariantOf(findPreset('bunny-night')!).name).toBe('bunny')
+    expect(lightVariantOf(findPreset('dark')!).name).toBe('classic')
+  })
+
+  it('makes every dark preset readable on white', () => {
+    for (const { theme } of THEME_PRESETS.filter((p) => p.theme.type === 'dark')) {
+      const light = lightVariantOf(theme)
+      expect(light.type, theme.name).toBe('light')
+      // Generated versions darken branch colors; designed partners keep their palette.
+      if (light.name.endsWith('-light')) {
+        for (const color of light.palette) expect(contrastOnWhite(color), `${theme.name} ${color}`).toBeGreaterThanOrEqual(2.9)
+      }
+      for (const key of ['--color', '--main-color'] as const) {
+        expect(contrastOnWhite(light.cssVar[key]!), `${theme.name} ${key}`).toBeGreaterThanOrEqual(4.5)
+      }
+      expect(contrastOnWhite(light.cssVar['--root-bgcolor']!), theme.name).toBeGreaterThanOrEqual(3)
+    }
+  })
+
+  it('replaces a pale center topic and keeps a strong one', () => {
+    expect(lightVariantOf(findPreset('graphite')!).cssVar['--root-bgcolor']).toBe('#2c2d35')
+    expect(lightVariantOf(findPreset('midnight')!).cssVar['--root-bgcolor']).toBe('#6366f1')
+  })
+
+  it('darkens colors only as much as needed', () => {
+    expect(darkenForWhite('#2c2d35')).toBe('#2c2d35')
+    expect(contrastOnWhite(darkenForWhite('#fdeccd'))).toBeGreaterThanOrEqual(2.9)
   })
 })

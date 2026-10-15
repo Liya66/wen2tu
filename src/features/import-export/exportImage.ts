@@ -7,14 +7,15 @@ export type ImageFormat = 'png' | 'svg'
 export async function exportImage(
   target: HTMLElement,
   format: ImageFormat,
-  backgroundColor: string,
+  /** null exports a transparent image. */
+  backgroundColor: string | null,
 ): Promise<Blob> {
   const { snapdom } = await import('@zumer/snapdom')
   // snapdom's backgroundColor only applies to raster formats; an SVG would be
   // transparent and show light (dark-theme) text on a viewer's white page.
   // Painting the background on the captured element bakes it into every format.
   const previous = target.style.backgroundColor
-  target.style.backgroundColor = backgroundColor
+  target.style.backgroundColor = backgroundColor ?? 'transparent'
   try {
     const capture = await snapdom(target, {
       backgroundColor,

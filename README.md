@@ -18,7 +18,7 @@
 - **A real editor.** Add, edit, drag, collapse and link nodes; undo and redo; keyboard shortcuts for everything common.
 - **Make it yours.** 12 color schemes, custom colors, 9 templates (project plan, SWOT, meeting notes…) and a style panel for topics: corners, outline or underline borders, fills, text color and size, branch colors.
 - **Bring your outlines.** Import Markdown (headings, nested lists, task lists) and OPML.
-- **Share the result.** Export PNG, SVG or a Markdown outline.
+- **Share the result.** Export PNG, SVG or a Markdown outline. Images include the map background, or choose a transparent export (dark schemes switch to a light version for white pages).
 - **Bilingual.** English and Simplified Chinese interface; switching never touches your content.
 
 ## Browser support

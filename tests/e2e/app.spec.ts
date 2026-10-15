@@ -324,3 +324,25 @@ test('exported images carry the theme background so text stays readable', async 
     expect(svg, scheme).toMatch(new RegExp(`background-color:\\s?${escaped}`))
   }
 })
+
+test('transparent export uses the light version of a dark scheme', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' })
+  await openApp(page)
+  await addChildToRoot(page, 'On white paper')
+  const canvasBackground = () =>
+    page.locator('.map-container').evaluate((el) => getComputedStyle(el).backgroundColor)
+  expect(await canvasBackground()).toBe('rgb(31, 32, 39)')
+
+  await page.getByRole('button', { name: 'Export' }).click()
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('menuitem', { name: /SVG, transparent/ }).click()
+  const svg = await readFile(await (await downloadPromise).path(), 'utf8')
+
+  expect(svg).toContain('On white paper')
+  expect(svg).not.toMatch(/background-color:\s?rgb\(31, 32, 39\)/)
+  // Light "wen2tu" colors: ink center topic and dark subtopic text.
+  expect(svg).toMatch(/background-color:\s?rgb\(44, 45, 53\)/)
+  // The editor goes back to the dark scheme, and nothing counts as an edit.
+  await expect.poll(canvasBackground).toBe('rgb(31, 32, 39)')
+  await expect(page.getByTestId('save-status')).toHaveText(/Draft/)
+})

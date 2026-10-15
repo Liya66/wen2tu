@@ -23,11 +23,8 @@ class FakeCanvas implements CanvasAdapter {
   }
   undo() {}
   redo() {}
-  exportTarget() {
-    return document.createElement('div')
-  }
-  backgroundColor() {
-    return '#fff'
+  withExportView<T>(_options: { light: boolean }, capture: (target: HTMLElement, background: string) => Promise<T>) {
+    return capture(document.createElement('div'), '#fff')
   }
   /** Simulates the user renaming the root node. */
   edit(topic: string) {

@@ -9,7 +9,7 @@
 - Detects files changed by other programs and asks before overwriting them.
 - Optional automatic saving to linked files.
 - Import Markdown (headings, nested lists, GFM task lists) and OPML.
-- Export PNG, SVG and Markdown outlines.
+- Export PNG, SVG and Markdown outlines. Images carry the map background; transparent exports use a light version of dark color schemes.
 - English and Simplified Chinese interface.
 - Bunny logo, app icons and a warm interface palette taken from the logo; maps use the matching “wen2tu” / “wen2tu Night” color schemes by default.
 - 12 color schemes plus custom colors and branch palettes; layout direction and compact spacing.

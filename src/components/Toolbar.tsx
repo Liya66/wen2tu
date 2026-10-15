@@ -152,6 +152,16 @@ export function Toolbar({
           items={[
             { label: t('toolbar.exportPng'), onSelect: () => void controller.exportImage('png') },
             { label: t('toolbar.exportSvg'), onSelect: () => void controller.exportImage('svg') },
+            {
+              label: t('toolbar.exportPngTransparent'),
+              hint: t('toolbar.exportTransparentHint'),
+              onSelect: () => void controller.exportImage('png', { transparent: true }),
+            },
+            {
+              label: t('toolbar.exportSvgTransparent'),
+              hint: t('toolbar.exportTransparentHint'),
+              onSelect: () => void controller.exportImage('svg', { transparent: true }),
+            },
             { label: t('toolbar.exportMarkdown'), onSelect: () => controller.exportMarkdown() },
           ]}
         />
