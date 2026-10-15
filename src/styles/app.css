@@ -1,24 +1,34 @@
 :root {
-  --bg: #f6f6f9;
+  /* Brand colors, taken from the wen2tu logo. */
+  --ink: #2c2d35;
+  --carrot: #ff9341;
+  --blossom: #fc9e9f;
+  --leaf: #77b26c;
+  --cream: #fdeccd;
+  --pebble: #a7a6a9;
+
+  --bg: #fdfaf5;
   --surface: #ffffff;
-  --surface-hover: #f0f0f5;
-  --surface-active: #e8e6fd;
-  --border: #e2e2ea;
-  --text: #1f1f29;
-  --text-muted: #62626f;
-  --accent: #5b4fe9;
-  --accent-text: #4a3fd6;
-  --accent-contrast: #ffffff;
-  --danger: #c4314b;
+  --surface-hover: #faf3e9;
+  --surface-active: #ffeedf;
+  --border: #ece4d8;
+  --text: var(--ink);
+  --text-muted: #6b6a72;
+  --accent: var(--carrot);
+  /* Darker carrot for text and icons on light surfaces (4.5:1 on white). */
+  --accent-text: #b85413;
+  --accent-contrast: var(--ink);
+  --success: #4f8a45;
+  --danger: #c93a4c;
   --danger-contrast: #ffffff;
-  --info-bg: #eef0ff;
-  --warning-bg: #fff6e0;
-  --warning-border: #f0c96b;
-  --error-bg: #fdecef;
-  --error-border: #f0a3b1;
-  --focus: #5b4fe9;
-  --shadow: 0 8px 24px rgb(20 20 40 / 14%);
-  --radius: 8px;
+  --info-bg: #fff6ea;
+  --warning-bg: #fdeccd;
+  --warning-border: #f2c88a;
+  --error-bg: #fff0f0;
+  --error-border: #f8b7b8;
+  --focus: #d9661b;
+  --shadow: 0 8px 24px rgb(44 45 53 / 14%);
+  --radius: 10px;
   --toolbar-height: 52px;
   --statusbar-height: 30px;
   --sidebar-width: 240px;
@@ -35,24 +45,25 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #17171c;
-    --surface: #202027;
-    --surface-hover: #2a2a33;
-    --surface-active: #322e5c;
-    --border: #34343f;
-    --text: #ececf1;
-    --text-muted: #a3a3b2;
-    --accent: #8b82ff;
-    --accent-text: #b3adff;
-    --accent-contrast: #14141a;
-    --danger: #ff7a90;
-    --danger-contrast: #1a0a0e;
-    --info-bg: #25244a;
-    --warning-bg: #3a3020;
+    --bg: #1f2027;
+    --surface: #2a2b33;
+    --surface-hover: #33343d;
+    --surface-active: #45352a;
+    --border: #3b3c46;
+    --text: #f6f1ea;
+    --text-muted: #b0aeb7;
+    --accent: #ff9e57;
+    --accent-text: #ffb27a;
+    --accent-contrast: #1f2027;
+    --success: #8cc782;
+    --danger: #ff8f96;
+    --danger-contrast: #1f2027;
+    --info-bg: #302a24;
+    --warning-bg: #3a3122;
     --warning-border: #7a6232;
-    --error-bg: #3d1f27;
+    --error-bg: #3d2629;
     --error-border: #7d3646;
-    --focus: #a59eff;
+    --focus: #ffb27a;
     --shadow: 0 8px 24px rgb(0 0 0 / 45%);
   }
 }
@@ -146,11 +157,15 @@ select {
 .brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   margin-right: 8px;
   font-weight: 650;
   font-size: 15px;
   white-space: nowrap;
+}
+
+.brand img {
+  display: block;
 }
 
 .tool-group {
@@ -365,7 +380,7 @@ select {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--blossom);
 }
 
 .doc-actions {
@@ -566,7 +581,7 @@ kbd {
 }
 
 .status[data-state='saved'] svg {
-  color: #2f9e6a;
+  color: var(--success);
 }
 
 .status[data-state='dirty'] svg {
@@ -823,7 +838,7 @@ kbd {
 }
 
 .theme-swatch-auto {
-  background: linear-gradient(135deg, #f6f6f6 50%, #252526 50%);
+  background: linear-gradient(135deg, #fdfaf5 50%, #1f2027 50%);
 }
 
 .theme-swatch-root {

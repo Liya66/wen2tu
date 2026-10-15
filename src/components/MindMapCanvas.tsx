@@ -171,6 +171,16 @@ export function MindMapCanvas({ language, label, newTopicName, onReady, onChange
     mind.bus.addListener('operation', onOperation)
     mind.bus.addListener('expandNode', notify)
     mind.bus.addListener('changeDirection', notify)
+    // The engine paints first-level topics' borders in their branch color on
+    // every layout; a border chosen in the style panel should win.
+    const keepCustomBorders = () => {
+      for (const tpc of mind.nodes.querySelectorAll<Topic>('me-main > me-wrapper > me-parent > me-tpc')) {
+        const style = tpc.nodeObj?.style as MapNode['style'] | undefined
+        if (style?.border) tpc.style.border = style.border
+        if (style?.borderBottom) tpc.style.borderBottom = style.borderBottom
+      }
+    }
+    mind.bus.addListener('linkDiv', keepCustomBorders)
     mind.bus.addListener('selectNodes', reportSelection)
     mind.bus.addListener('unselectNodes', reportSelection)
 

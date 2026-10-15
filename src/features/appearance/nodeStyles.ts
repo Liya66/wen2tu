@@ -26,8 +26,8 @@ export interface NodeLook {
 
 export const RADIUS: Record<CornerShape, string> = { square: '0px', rounded: '8px', pill: '999px' }
 export const FONT_SIZES = ['12', '14', '16', '20', '24', '32'] as const
-export const DEFAULT_BORDER_COLOR = '#5b4fe9'
-export const DEFAULT_FILL_COLOR = '#fff3bf'
+export const DEFAULT_BORDER_COLOR = '#2c2d35'
+export const DEFAULT_FILL_COLOR = '#fdeccd'
 
 const BORDER_PATTERN = /^(\d+(?:\.\d+)?)px\s+(solid|dashed|dotted)\s+(.+)$/
 

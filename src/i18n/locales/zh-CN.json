@@ -185,6 +185,8 @@
     }
   },
   "themes": {
+    "bunny": "文兔兔",
+    "bunny-night": "文兔兔 · 夜",
     "classic": "经典",
     "ocean": "海洋",
     "forest": "森林",

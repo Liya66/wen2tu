@@ -211,7 +211,7 @@ export const TEMPLATES: MapTemplate[] = [
   },
   {
     id: 'org',
-    theme: 'classic',
+    theme: 'bunny',
     direction: DOWN,
     content: {
       en: ['Organization', [['Team A', [['Member'], ['Member']]], ['Team B', [['Member']]], ['Team C']]],

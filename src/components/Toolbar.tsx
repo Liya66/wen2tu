@@ -86,7 +86,7 @@ export function Toolbar({
       </button>
 
       <div className="brand">
-        <Logo size={24} />
+        <Logo size={30} />
         <span className="brand-name">{t('app.name')}</span>
       </div>
 

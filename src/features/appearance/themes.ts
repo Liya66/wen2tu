@@ -47,6 +47,39 @@ export interface ThemePreset {
 
 export const THEME_PRESETS: ThemePreset[] = [
   {
+    // The logo's colors: ink outlines, blossom pink, carrot, leaf and pebble gray.
+    id: 'bunny',
+    theme: makeTheme('bunny', {
+      type: 'light',
+      background: '#fdfaf5',
+      text: '#4a4b55',
+      rootText: '#ffffff',
+      rootFill: '#2c2d35',
+      mainText: '#2c2d35',
+      mainFill: '#ffffff',
+      selected: '#ff9341',
+      accent: '#fc9e9f',
+      palette: ['#2c2d35', '#fc9e9f', '#ff9341', '#77b26c', '#a7a6a9', '#e46f70', '#e57a2c', '#5f9a55'],
+      mainRadius: '16px',
+    }),
+  },
+  {
+    id: 'bunny-night',
+    theme: makeTheme('bunny-night', {
+      type: 'dark',
+      background: '#1f2027',
+      text: '#d9d6dd',
+      rootText: '#2c2d35',
+      rootFill: '#fdeccd',
+      mainText: '#f6f1ea',
+      mainFill: '#2a2b33',
+      selected: '#ff9e57',
+      accent: '#fc9e9f',
+      palette: ['#fc9e9f', '#ff9e57', '#8cc782', '#c9c7cc', '#fdb5a0', '#fdeccd', '#f47f80', '#b7d9a8'],
+      mainRadius: '16px',
+    }),
+  },
+  {
     id: 'classic',
     theme: makeTheme('classic', {
       type: 'light',
@@ -207,7 +240,7 @@ export function findPreset(id: string): MapTheme | undefined {
 
 /** The theme used when a map follows the system (no theme saved in the file). */
 export function systemTheme(prefersDark: boolean): MapTheme {
-  return findPreset(prefersDark ? 'dark' : 'classic')!
+  return findPreset(prefersDark ? 'bunny-night' : 'bunny')!
 }
 
 /** Colors a user can override in the Map panel, and the variable each one sets. */

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/favicon.svg" width="72" height="72" alt="">
+  <img src="brand/wen2tu-logo.webp" width="420" alt="wen2tu logo: a bunny holding a carrot pencil, connected to mind map topics">
 </p>
 
 <h1 align="center">wen2tu · 文兔兔</h1>
@@ -16,7 +16,7 @@
 - **Your files, your device.** Open and save `.mind.json` files on your computer. No account, no server, no upload.
 - **Never lose work.** Every edit is copied to browser storage within a fraction of a second, and restored after a crash or an accidental reload.
 - **A real editor.** Add, edit, drag, collapse and link nodes; undo and redo; keyboard shortcuts for everything common.
-- **Make it yours.** 10 color schemes, custom colors, 9 templates (project plan, SWOT, meeting notes…) and a style panel for topics: corners, outline or underline borders, fills, text color and size, branch colors.
+- **Make it yours.** 12 color schemes, custom colors, 9 templates (project plan, SWOT, meeting notes…) and a style panel for topics: corners, outline or underline borders, fills, text color and size, branch colors.
 - **Bring your outlines.** Import Markdown (headings, nested lists, task lists) and OPML.
 - **Share the result.** Export PNG, SVG or a Markdown outline.
 - **Bilingual.** English and Simplified Chinese interface; switching never touches your content.

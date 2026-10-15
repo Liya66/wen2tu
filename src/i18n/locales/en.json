@@ -185,6 +185,8 @@
     }
   },
   "themes": {
+    "bunny": "wen2tu",
+    "bunny-night": "wen2tu Night",
     "classic": "Classic",
     "ocean": "Ocean",
     "forest": "Forest",

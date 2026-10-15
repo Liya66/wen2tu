@@ -2,19 +2,20 @@ import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toHexColor } from '../features/appearance/nodeStyles'
 
+// Logo colors first (ink, white, blossom, carrot, leaf, pebble, cream), then a few extras.
 const SWATCHES = [
-  '#1f2937',
+  '#2c2d35',
   '#ffffff',
-  '#ef4444',
-  '#f97316',
-  '#f59e0b',
-  '#22c55e',
-  '#14b8a6',
+  '#fc9e9f',
+  '#ff9341',
+  '#77b26c',
+  '#a7a6a9',
+  '#fdeccd',
+  '#e5484d',
+  '#f5c542',
   '#3b82f6',
-  '#6366f1',
-  '#a855f7',
-  '#ec4899',
-  '#fef3c7',
+  '#8b5cf6',
+  '#14b8a6',
 ]
 
 interface Props {

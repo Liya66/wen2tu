@@ -14,8 +14,8 @@ describe('themes', () => {
   })
 
   it('maps without a theme follow the system', () => {
-    expect(systemTheme(false).name).toBe('classic')
-    expect(systemTheme(true).name).toBe('dark')
+    expect(systemTheme(false).name).toBe('bunny')
+    expect(systemTheme(true).name).toBe('bunny-night')
     expect(parseDocument(serializeMap({ nodeData: { id: 'r', topic: 'r' } })).map.theme).toBeUndefined()
   })
 
