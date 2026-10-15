@@ -41,7 +41,10 @@ const CONTENT: Record<Language, { title: string; root: string; branches: Branch[
       {
         text: '一键生成',
         side: 'left',
-        children: [{ text: 'tip：让任意 AI 把材料整理成导图 .md，导入文兔兔，秒出导图' }],
+        children: [
+          { text: 'tip：让任意 AI 把材料整理成 Markdown 大纲，复制后在文兔兔按 Ctrl/⌘ + V，秒出导图' },
+          { text: '“新建 → 粘贴文字生成…”里可一键复制 AI 提示词' },
+        ],
       },
       {
         text: '快捷键',
@@ -108,7 +111,10 @@ const CONTENT: Record<Language, { title: string; root: string; branches: Branch[
       {
         text: 'One-click maps',
         side: 'left',
-        children: [{ text: 'Tip: ask any AI to turn your notes into a mind map .md, import it here — instant map' }],
+        children: [
+          { text: 'Tip: ask any AI to turn your notes into a Markdown outline, copy it, press Ctrl/⌘ + V here — instant map' },
+          { text: '“New → From pasted text…” has an AI prompt to copy' },
+        ],
       },
       {
         text: 'Shortcuts',
