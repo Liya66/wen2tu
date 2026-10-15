@@ -36,8 +36,14 @@ describe('subBranchPath', () => {
 
   it('starts from the middle of boxed parents and first-level topics', () => {
     expect(subBranchPath(base, GAP, undefined, 'box')).toMatch(/^M 170 20 /)
-    expect(subBranchPath({ ...base, isFirst: true }, GAP, undefined, undefined)).toMatch(/^M 170 20 /)
+    // First-level topics have no padding: start right at their edge, not inside.
+    expect(subBranchPath({ ...base, isFirst: true }, GAP, undefined, undefined)).toMatch(/^M 200 20 /)
     expect(subBranchPath(base, GAP, undefined, 'underline')).toMatch(/^M 170 40 /)
+  })
+
+  it('starts at the outer edge of first-level topics on the left side too', () => {
+    const lhs = { ...base, pL: 300, cL: 200, direction: 'lhs', isFirst: true }
+    expect(subBranchPath(lhs, GAP, undefined, undefined)).toMatch(/^M 300 20 /)
   })
 
   it('mirrors on the left side', () => {

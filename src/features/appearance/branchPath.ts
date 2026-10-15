@@ -42,7 +42,8 @@ export interface SubBranchParams {
 
 /**
  * SVG path from a parent topic to a child topic, following Mind Elixir's
- * default curve but without underlines for styled topics.
+ * default curve, always attached to the topics' edges, and without
+ * underlines for styled topics.
  *
  * `gap` is the horizontal padding around topics (`--node-gap-x`): parent and
  * child rectangles (`p*`, `c*`) include it, the visible topic does not.
@@ -56,8 +57,12 @@ export function subBranchPath(
   const { pT, pL, pW, pH, cT, cL, cW, cH, direction, isFirst } = params
   const lhs = direction === 'lhs'
   const parentEdge = lhs ? pL : pL + pW
-  // Start at the edge of the visible parent topic.
-  const startX = lhs ? parentEdge + gap : parentEdge - gap
+  // Start at the edge of the visible parent topic. Deeper topics sit inside
+  // `gap` of horizontal padding; first-level topics have none. (The engine's
+  // own path starts `gap` inside first-level topics too, which only stays
+  // hidden while they have an opaque fill.)
+  const inset = isFirst ? 0 : gap
+  const startX = lhs ? parentEdge + inset : parentEdge - inset
   // First-level topics and boxed topics are joined at their middle; plain
   // topics continue from their underline.
   const startY = isFirst || parentKind === 'box' ? pT + pH / 2 : pT + pH

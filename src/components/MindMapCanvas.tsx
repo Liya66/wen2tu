@@ -150,9 +150,9 @@ export function MindMapCanvas({ language, label, newTopicName, onReady, onChange
     mind.init(MindElixir.new(''))
     mindRef.current = mind
 
-    // Branch lines: the engine underlines every subtopic. Styled topics
-    // (boxed, filled or with their own underline) are joined differently, see
-    // subBranchPath. The engine only passes geometry, so styled topics are
+    // Branch lines (left/right layouts) are drawn by subBranchPath: attached
+    // to topic edges, with no underline under styled (boxed, filled or
+    // underlined) topics. The engine only passes geometry, so styled topics are
     // looked up by the position of their wrapper, indexed once per layout pass.
     const defaultSubBranch = mind.generateSubBranch
     let styledIndex: Map<string, Topic> | null = null
@@ -177,7 +177,6 @@ export function MindMapCanvas({ language, label, newTopicName, onReady, onChange
       if (params.direction !== 'lhs' && params.direction !== 'rhs') return defaultSubBranch.call(this, params)
       const childTopic = styledTopicAt(params.cT, params.cL, params.cW, params.cH)
       const parentTopic = params.isFirst ? undefined : styledTopicAt(params.pT, params.pL, params.pW, params.pH)
-      if (!childTopic && !parentTopic) return defaultSubBranch.call(this, params)
       const gap = parseInt(this.container.style.getPropertyValue('--node-gap-x')) || 30
       const child = childTopic && {
         kind: topicKind(childTopic.nodeObj.style as MapNode['style'])!,
