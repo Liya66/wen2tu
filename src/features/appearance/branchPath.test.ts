@@ -1,0 +1,69 @@
+import { describe, expect, it } from 'vitest'
+import { subBranchPath, tint, topicKind, type SubBranchParams } from './branchPath'
+import { mergeLook, readLook } from './nodeStyles'
+
+// Parent wrapper at x 100–200 (topic 130–170 with a 30px gap), child wrapper at x 200–300.
+const base: SubBranchParams = { pT: 0, pL: 100, pW: 100, pH: 40, cT: 100, cL: 200, cW: 100, cH: 40, direction: 'rhs', isFirst: false }
+const GAP = 30
+
+describe('topicKind', () => {
+  it('classifies styles', () => {
+    expect(topicKind(undefined)).toBeNull()
+    expect(topicKind({ color: 'red' })).toBeNull()
+    expect(topicKind({ border: 'none', background: 'transparent', borderRadius: '999px' })).toBeNull()
+    expect(topicKind({ border: '2px solid red' })).toBe('box')
+    expect(topicKind({ background: '#fff' })).toBe('box')
+    expect(topicKind({ border: 'none', borderBottom: '2px solid red' })).toBe('underline')
+  })
+})
+
+describe('subBranchPath', () => {
+  it('underlines unstyled children, like the engine', () => {
+    expect(subBranchPath(base, GAP, undefined, undefined)).toMatch(/^M 170 40 C 200 40 [\d.]+ 140 230 140 H 270$/)
+  })
+
+  it('joins boxed children at the middle of their side, without an underline', () => {
+    const path = subBranchPath(base, GAP, { kind: 'box', top: 106, left: 230, width: 40, height: 28 }, undefined)
+    expect(path).toMatch(/ 230 120$/)
+    expect(path).not.toContain('H')
+  })
+
+  it('ends at the start of a custom underline', () => {
+    const path = subBranchPath(base, GAP, { kind: 'underline', top: 106, left: 230, width: 40, height: 28 }, undefined)
+    expect(path).toMatch(/ 230 134$/)
+    expect(path).not.toContain('H')
+  })
+
+  it('starts from the middle of boxed parents and first-level topics', () => {
+    expect(subBranchPath(base, GAP, undefined, 'box')).toMatch(/^M 170 20 /)
+    expect(subBranchPath({ ...base, isFirst: true }, GAP, undefined, undefined)).toMatch(/^M 170 20 /)
+    expect(subBranchPath(base, GAP, undefined, 'underline')).toMatch(/^M 170 40 /)
+  })
+
+  it('mirrors on the left side', () => {
+    const lhs = { ...base, pL: 300, cL: 200, direction: 'lhs' }
+    expect(subBranchPath(lhs, GAP, undefined, undefined)).toMatch(/^M 330 40 C 300 40 [\d.]+ 140 270 140 H 230$/)
+    expect(subBranchPath(lhs, GAP, { kind: 'box', top: 106, left: 230, width: 40, height: 28 }, undefined)).toMatch(/ 270 120$/)
+  })
+})
+
+describe('tint', () => {
+  it('mixes colors with white', () => {
+    expect(tint('#000000', 0.25)).toBe('#bfbfbf')
+    expect(tint('#ffffff')).toBe('#ffffff')
+    expect(tint('not-a-color')).toBe('#fdeccd')
+  })
+})
+
+describe('shapes without a border', () => {
+  it('get a fill so the shape is visible', () => {
+    expect(mergeLook(readLook(), { shape: 'pill' }).fill).toBe('solid')
+    expect(mergeLook(readLook({ border: 'none' }), { shape: 'rounded' }).fill).toBe('solid')
+  })
+
+  it('keep the fill the user chose, and outlined shapes stay unfilled', () => {
+    expect(mergeLook(readLook(), { shape: 'pill', fill: 'none' }).fill).toBe('none')
+    expect(mergeLook(readLook({ border: '2px solid red' }), { shape: 'pill' }).fill).toBe('default')
+    expect(mergeLook(readLook({ borderRadius: '999px' }), { fill: 'default' }).fill).toBe('default')
+  })
+})

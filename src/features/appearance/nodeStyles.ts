@@ -127,12 +127,25 @@ export function readableTextOn(background: string): string {
 }
 
 /**
- * Applies `changes` to a topic's current look. When a fill is involved and the
- * text color was never chosen by hand, the text color follows the fill so the
- * topic stays readable.
+ * Applies `changes` to a topic's current look. Choosing a shape without a
+ * border turns on a fill. When a fill is involved and the text color was
+ * never chosen by hand, the text color follows the fill so the topic stays
+ * readable.
  */
 export function mergeLook(current: NodeLook, changes: Partial<NodeLook>): NodeLook {
   const next = { ...current, ...changes }
+  // A shape is invisible without a border or fill: give it a fill unless the
+  // user chose the fill themselves.
+  const shapeOrBorderChanged = 'shape' in changes || 'border' in changes
+  if (
+    shapeOrBorderChanged &&
+    !('fill' in changes) &&
+    next.shape &&
+    (next.border === 'default' || next.border === 'none') &&
+    next.fill === 'default'
+  ) {
+    next.fill = 'solid'
+  }
   if ('textColor' in changes) return next
   const autoText =
     !current.textColor || (current.fill === 'solid' && current.textColor === readableTextOn(current.fillColor))

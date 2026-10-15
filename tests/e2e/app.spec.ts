@@ -275,8 +275,15 @@ test('templates, color schemes and topic styles are saved in the file', async ({
   await expect(panel.getByRole('button', { name: 'Midnight', exact: true })).toHaveAttribute('aria-pressed', 'true')
 
   // Selecting a topic switches the panel to its controls.
-  await page.locator('me-tpc', { hasText: 'Timeline' }).click()
+  const research = page.locator('me-tpc', { hasText: 'Phase 1 · Research' })
+  await research.click()
   await expect(panel.getByText('1 topic selected')).toBeVisible()
+  // A shape without a border gets a visible fill.
+  await panel.getByRole('radio', { name: 'Pill' }).click()
+  await expect(panel.getByRole('radio', { name: 'Color' })).toHaveAttribute('aria-checked', 'true')
+  await expect(research).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+
+  await page.locator('me-tpc', { hasText: 'Timeline' }).click()
   await panel.getByRole('radio', { name: 'Outline' }).click()
   await panel.getByRole('radio', { name: 'Square' }).click()
   await panel.getByRole('button', { name: 'Bold' }).click()
@@ -286,6 +293,7 @@ test('templates, color schemes and topic styles are saved in the file', async ({
 
   // Undo reverts the last style change only.
   await page.getByRole('button', { name: 'Undo' }).click()
+  await expect(research).toHaveCSS('border-radius', '999px')
   await expect(page.locator('me-tpc', { hasText: 'Timeline' })).not.toHaveCSS('font-weight', '700')
   await page.getByRole('button', { name: 'Redo' }).click()
 

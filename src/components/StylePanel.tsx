@@ -9,6 +9,7 @@ import {
   readLook,
   type NodeLook,
 } from '../features/appearance/nodeStyles'
+import { tint } from '../features/appearance/branchPath'
 import { CUSTOM_COLOR_VARS, THEME_PRESETS, customizeTheme, withPalette } from '../features/appearance/themes'
 import type { Direction, MapTheme } from '../features/mindmap/types'
 import { ColorField } from './ColorField'
@@ -86,8 +87,15 @@ function NodeTab({ editor, selection }: { editor: EditorApi; selection: Selected
 
   const look = readLook(selection[0].style)
   /** Merges a change into each selected topic's own look, so other properties stay as they were. */
-  const patchFor = (changes: Partial<NodeLook>) => (node: SelectedNode) =>
-    lookToStyle(mergeLook(readLook(node.style), changes), node.depth)
+  const patchFor = (changes: Partial<NodeLook>) => (node: SelectedNode) => {
+    const current = readLook(node.style)
+    // New borders take the branch color; new fills a light tint of it.
+    if (node.lineColor) {
+      if (current.border !== 'full' && current.border !== 'underline') current.borderColor = node.lineColor
+      if (current.fill !== 'solid') current.fillColor = tint(node.lineColor)
+    }
+    return lookToStyle(mergeLook(current, changes), node.depth)
+  }
   const apply = (changes: Partial<NodeLook>) => editor.applyNodeStyle(patchFor(changes))
   const preview = (changes: Partial<NodeLook>) => editor.previewNodeStyle(patchFor(changes))
   const hasBranch = selection.some((node) => node.depth > 0)

@@ -3,6 +3,7 @@ import MindElixir, {
   type MindElixirInstance,
   type NodeObj,
   type Operation,
+  type SubLineParams,
   type Theme,
   type Topic,
 } from 'mind-elixir'
@@ -12,7 +13,8 @@ import { useEffect, useRef } from 'react'
 import type { Language } from '../i18n'
 import { fromEngineData } from '../features/mindmap/document'
 import { escapeHtml } from '../features/mindmap/sanitize'
-import type { StylePatch } from '../features/appearance/nodeStyles'
+import { subBranchPath, topicKind } from '../features/appearance/branchPath'
+import { toHexColor, type StylePatch } from '../features/appearance/nodeStyles'
 import { systemTheme } from '../features/appearance/themes'
 import type { Direction, MapNode, MapTheme, MindMap, ThemeVar } from '../features/mindmap/types'
 import type { CanvasAdapter } from '../features/workspace/workspaceController'
@@ -55,6 +57,8 @@ export interface SelectedNode {
   depth: number
   style: MapNode['style']
   branchColor?: string
+  /** Color of the branch line leading to this topic (undefined for the root). */
+  lineColor?: string
 }
 
 /** Appearance controls used by the style panel, on top of what the workspace needs. */
@@ -78,8 +82,16 @@ export interface EditorApi extends CanvasAdapter {
   setBranchColor(color: string | undefined): void
 }
 
-function toEngineTheme(theme: MapTheme): Theme {
-  return { name: theme.name, type: theme.type, palette: [...theme.palette], cssVar: { ...theme.cssVar } }
+type SubBranch = NonNullable<Theme['generateSubBranch']>
+
+function toEngineTheme(theme: MapTheme, generateSubBranch?: SubBranch): Theme {
+  return {
+    name: theme.name,
+    type: theme.type,
+    palette: [...theme.palette],
+    cssVar: { ...theme.cssVar },
+    generateSubBranch,
+  }
 }
 
 function depthOf(node: NodeObj): number {
@@ -131,6 +143,46 @@ export function MindMapCanvas({ language, label, newTopicName, onReady, onChange
     mind.init(MindElixir.new(''))
     mindRef.current = mind
 
+    // Branch lines: the engine underlines every subtopic. Styled topics
+    // (boxed, filled or with their own underline) are joined differently, see
+    // subBranchPath. The engine only passes geometry, so styled topics are
+    // looked up by the position of their wrapper, indexed once per layout pass.
+    const defaultSubBranch = mind.generateSubBranch
+    let styledIndex: Map<string, Topic> | null = null
+    const engineLinkDiv = mind.linkDiv
+    mind.linkDiv = function (...args) {
+      styledIndex = null
+      return engineLinkDiv.apply(this, args)
+    }
+    const styledTopicAt = (top: number, left: number, width: number, height: number) => {
+      if (!styledIndex) {
+        styledIndex = new Map()
+        for (const tpc of mind.nodes.querySelectorAll<Topic>('me-children me-tpc')) {
+          if (!topicKind(tpc.nodeObj?.style as MapNode['style'])) continue
+          const wrapper = tpc.parentElement!
+          const key = `${wrapper.offsetTop},${wrapper.offsetLeft},${wrapper.offsetWidth},${wrapper.offsetHeight}`
+          if (!styledIndex.has(key)) styledIndex.set(key, tpc)
+        }
+      }
+      return styledIndex.get(`${top},${left},${width},${height}`)
+    }
+    const styledSubBranch: SubBranch = function (this: MindElixirInstance, params: SubLineParams) {
+      if (params.direction !== 'lhs' && params.direction !== 'rhs') return defaultSubBranch.call(this, params)
+      const childTopic = styledTopicAt(params.cT, params.cL, params.cW, params.cH)
+      const parentTopic = params.isFirst ? undefined : styledTopicAt(params.pT, params.pL, params.pW, params.pH)
+      if (!childTopic && !parentTopic) return defaultSubBranch.call(this, params)
+      const gap = parseInt(this.container.style.getPropertyValue('--node-gap-x')) || 30
+      const child = childTopic && {
+        kind: topicKind(childTopic.nodeObj.style as MapNode['style'])!,
+        top: params.cT + childTopic.offsetTop,
+        left: params.cL + childTopic.offsetLeft,
+        width: childTopic.offsetWidth,
+        height: childTopic.offsetHeight,
+      }
+      const parentKind = parentTopic ? (topicKind(parentTopic.nodeObj.style as MapNode['style']) ?? undefined) : undefined
+      return subBranchPath(params, gap, child, parentKind)
+    }
+
     const notify = () => callbacks.current.onChange()
 
     const selection = (): SelectedNode[] =>
@@ -139,6 +191,7 @@ export function MindMapCanvas({ language, label, newTopicName, onReady, onChange
         depth: depthOf(tpc.nodeObj),
         style: { ...(tpc.nodeObj.style as MapNode['style']) },
         branchColor: tpc.nodeObj.branchColor,
+        lineColor: lineColorOf(tpc.nodeObj),
       }))
     // Selection events can arrive in bursts (e.g. undo re-selects); report once.
     let selectionQueued = false
@@ -172,20 +225,30 @@ export function MindMapCanvas({ language, label, newTopicName, onReady, onChange
     mind.bus.addListener('expandNode', notify)
     mind.bus.addListener('changeDirection', notify)
     // The engine paints first-level topics' borders in their branch color on
-    // every layout; a border chosen in the style panel should win.
-    const keepCustomBorders = () => {
+    // every layout. Remember that color (subtopics inherit it), then let a
+    // border chosen in the style panel win.
+    const mainBranchColors = new WeakMap<NodeObj, string>()
+    const afterLinkDiv = () => {
       for (const tpc of mind.nodes.querySelectorAll<Topic>('me-main > me-wrapper > me-parent > me-tpc')) {
+        if (tpc.style.borderColor) mainBranchColors.set(tpc.nodeObj, toHexColor(tpc.style.borderColor))
         const style = tpc.nodeObj?.style as MapNode['style'] | undefined
         if (style?.border) tpc.style.border = style.border
         if (style?.borderBottom) tpc.style.borderBottom = style.borderBottom
       }
     }
-    mind.bus.addListener('linkDiv', keepCustomBorders)
+    mind.bus.addListener('linkDiv', afterLinkDiv)
+    const lineColorOf = (node: NodeObj): string | undefined => {
+      for (let current: NodeObj | undefined = node; current?.parent; current = current.parent) {
+        if (current.branchColor) return current.branchColor
+        if (!current.parent.parent) return mainBranchColors.get(current)
+      }
+      return undefined
+    }
     mind.bus.addListener('selectNodes', reportSelection)
     mind.bus.addListener('unselectNodes', reportSelection)
 
     const applyTheme = (refresh: boolean) => {
-      mind.changeTheme(toEngineTheme(savedTheme ?? systemTheme(darkQuery.matches)), refresh)
+      mind.changeTheme(toEngineTheme(savedTheme ?? systemTheme(darkQuery.matches), styledSubBranch), refresh)
     }
     const onSystemThemeChange = () => {
       if (!savedTheme) applyTheme(true)
