@@ -26,7 +26,8 @@
     "newFromTemplate": "From template…",
     "exportPngTransparent": "PNG, transparent",
     "exportSvgTransparent": "SVG, transparent",
-    "exportTransparentHint": "No background; dark color schemes use their light version."
+    "exportTransparentHint": "No background; dark color schemes use their light version.",
+    "welcome": "Welcome map"
   },
   "sidebar": {
     "title": "Maps",

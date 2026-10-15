@@ -196,6 +196,7 @@ export function Toolbar({
               onSelect: () => void controller.setAutoWrite(!state.autoWrite),
             },
             { label: t('toolbar.shortcuts'), onSelect: onShowShortcuts },
+            { label: t('toolbar.welcome'), onSelect: () => controller.openWelcome() },
           ]}
         />
       </div>

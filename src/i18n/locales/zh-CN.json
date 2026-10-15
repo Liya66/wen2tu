@@ -26,7 +26,8 @@
     "newFromTemplate": "从模板新建…",
     "exportPngTransparent": "PNG 图片（透明背景）",
     "exportSvgTransparent": "SVG 图片（透明背景）",
-    "exportTransparentHint": "不带背景；深色配色按浅色版本导出。"
+    "exportTransparentHint": "不带背景；深色配色按浅色版本导出。",
+    "welcome": "欢迎导图"
   },
   "sidebar": {
     "title": "脑图",

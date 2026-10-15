@@ -129,6 +129,7 @@ export class WorkspaceController {
   private readonly listeners = new Set<() => void>()
   private readonly texts: () => ControllerTexts
   private readonly openStore: () => Promise<WorkspaceStore>
+  private readonly welcome?: () => { title: string; map: MindMap }
   private store: WorkspaceStore | null = null
   private canvas: CanvasAdapter | null = null
   private readonly docs = new Map<string, WorkspaceDoc>()
@@ -146,9 +147,15 @@ export class WorkspaceController {
   private permissionDocId: string | null = null
   private storageErrorShown = false
 
-  constructor(texts: () => ControllerTexts, openStore: () => Promise<WorkspaceStore> = openWorkspaceStore) {
+  constructor(
+    texts: () => ControllerTexts,
+    openStore: () => Promise<WorkspaceStore> = openWorkspaceStore,
+    /** Builds the map shown on a first visit (empty workspace). */
+    welcome?: () => { title: string; map: MindMap },
+  ) {
     this.texts = texts
     this.openStore = openStore
+    this.welcome = welcome
     this.state = this.computeState(false)
   }
 
@@ -265,7 +272,10 @@ export class WorkspaceController {
     if (!activeId || !this.docs.has(activeId)) {
       activeId = [...this.docs.values()].sort((a, b) => b.lastOpenedAt - a.lastOpenedAt)[0]?.id
     }
-    if (!activeId) activeId = this.createDraft(createMap(this.texts().rootTopic)).id
+    if (!activeId) {
+      const first = this.welcome?.()
+      activeId = (first ? this.createDraft(first.map, first.title) : this.createDraft(createMap(this.texts().rootTopic))).id
+    }
 
     this.activate(activeId)
     const doc = this.activeDoc()
@@ -417,6 +427,12 @@ export class WorkspaceController {
     this.flush()
     const doc = title ? this.createDraft(map, this.uniqueTitle(title)) : this.createDraft(map)
     this.activate(doc.id)
+  }
+
+  /** Opens a fresh copy of the welcome map. */
+  openWelcome() {
+    const welcome = this.welcome?.()
+    if (welcome) this.newDoc(welcome.map, welcome.title)
   }
 
   switchTo(id: string) {

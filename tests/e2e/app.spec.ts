@@ -346,3 +346,25 @@ test('transparent export uses the light version of a dark scheme', async ({ page
   await expect.poll(canvasBackground).toBe('rgb(31, 32, 39)')
   await expect(page.getByTestId('save-status')).toHaveText(/Draft/)
 })
+
+test('a first visit opens the welcome map in the interface language', async ({ page }) => {
+  await openApp(page, 'zh-CN', { welcome: true })
+  await expect(page.locator('me-root me-tpc')).toHaveText('欢迎来到文兔兔')
+  await expect(page.getByRole('button', { name: /^欢迎使用文兔兔/ })).toBeVisible()
+  for (const topic of ['这是什么', '适合用来', '快速上手', '文件与保存', '开源项目']) {
+    await expect(page.locator('me-tpc', { hasText: topic }).first()).toBeVisible()
+  }
+  const github = page.locator('me-tpc', { hasText: 'GitHub' }).locator('a.hyper-link')
+  await expect(github).toHaveAttribute('href', 'https://github.com/Liya66/wen2tu')
+
+  // It is only created once; later visits reopen the last map.
+  await page.waitForTimeout(600)
+  await page.reload()
+  await expect(page.getByRole('button', { name: /^欢迎使用文兔兔/ })).toHaveCount(1)
+
+  // Settings → Welcome map opens a fresh copy in the current language.
+  await page.getByRole('combobox', { name: '语言' }).selectOption('en')
+  await page.getByRole('button', { name: 'Settings' }).click()
+  await page.getByRole('menuitem', { name: 'Welcome map' }).click()
+  await expect(page.locator('me-root me-tpc')).toHaveText('Welcome to wen2tu')
+})

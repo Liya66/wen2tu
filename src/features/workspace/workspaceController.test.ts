@@ -322,4 +322,24 @@ describe('WorkspaceController', () => {
       delete (window as { showSaveFilePicker?: unknown }).showSaveFilePicker
     }
   })
+
+  it('opens the welcome map on a first visit only', async () => {
+    const store = new MemoryStore()
+    const welcome = () => ({ title: 'Welcome', map: createMap('Hello') })
+    const first = new WorkspaceController(texts, async () => store, welcome)
+    const canvas = new FakeCanvas()
+    first.attachCanvas(canvas)
+    await vi.waitFor(() => expect(first.getState().ready).toBe(true))
+    expect(first.getState().active?.title).toBe('Welcome')
+    expect(canvas.map.nodeData.topic).toBe('Hello')
+    await vi.runAllTimersAsync()
+
+    const second = new WorkspaceController(texts, async () => store, welcome)
+    second.attachCanvas(new FakeCanvas())
+    await vi.waitFor(() => expect(second.getState().ready).toBe(true))
+    expect(second.getState().docs).toHaveLength(1)
+
+    second.openWelcome()
+    expect(second.getState().docs.map((d) => d.title)).toEqual(['Welcome 2', 'Welcome'])
+  })
 })

@@ -82,6 +82,9 @@ export interface EditorApi extends CanvasAdapter {
   setBranchColor(color: string | undefined): void
 }
 
+/** Lowest zoom used when opening a map that is larger than the screen. */
+const MIN_OPEN_SCALE = 0.6
+
 type SubBranch = NonNullable<Theme['generateSubBranch']>
 
 function toEngineTheme(theme: MapTheme, generateSubBranch?: SubBranch): Theme {
@@ -288,6 +291,13 @@ export function MindMapCanvas({ language, label, newTopicName, onReady, onChange
         applyTheme(false)
         mind.refresh(map as unknown as MindElixirData)
         mind.clearHistory?.()
+        mind.scale(1)
+        // Open large maps zoomed out to fit, but never so far that text gets hard to read.
+        const fit = Math.min(
+          mind.container.offsetWidth / mind.nodes.offsetWidth,
+          mind.container.offsetHeight / mind.nodes.offsetHeight,
+        )
+        if (fit < 1) mind.scale(Math.max(MIN_OPEN_SCALE, fit))
         mind.toCenter()
         reportSelection()
         return adapter.getMap()

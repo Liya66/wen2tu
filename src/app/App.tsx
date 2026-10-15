@@ -9,6 +9,7 @@ import { StatusBar } from '../components/StatusBar'
 import { StylePanel } from '../components/StylePanel'
 import { TemplateDialog } from '../components/TemplateDialog'
 import { createMapFromTemplate } from '../features/appearance/templates'
+import { createWelcomeMap } from '../features/onboarding/welcomeMap'
 import { Toolbar } from '../components/Toolbar'
 import { WorkspaceController, type DocSummary } from '../features/workspace/workspaceController'
 import i18n, { LANGUAGES, type Language } from '../i18n'
@@ -32,13 +33,21 @@ function writeFlag(key: string, value: boolean) {
   }
 }
 
+function currentLanguage(): Language {
+  return (LANGUAGES as readonly string[]).includes(i18n.resolvedLanguage ?? '') ? (i18n.resolvedLanguage as Language) : 'en'
+}
+
 function createController() {
-  return new WorkspaceController(() => ({
-    untitled: i18n.t('map.untitled'),
-    rootTopic: i18n.t('map.rootTopic'),
-    nativeFileType: i18n.t('fileTypes.native'),
+  return new WorkspaceController(
+    () => ({
+      untitled: i18n.t('map.untitled'),
+      rootTopic: i18n.t('map.rootTopic'),
+      nativeFileType: i18n.t('fileTypes.native'),
     supportedFileTypes: i18n.t('fileTypes.supported'),
-  }))
+    }),
+    undefined,
+    () => createWelcomeMap(currentLanguage()),
+  )
 }
 
 /** Commits an in-progress node edit so shortcuts like Save include it. */

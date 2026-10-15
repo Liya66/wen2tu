@@ -10,13 +10,22 @@ export function trackConsoleErrors(page: Page): string[] {
   return errors
 }
 
-export async function openApp(page: Page, language: 'en' | 'zh-CN' = 'en') {
+/**
+ * Opens the app. A first visit shows the welcome map; unless `welcome` is
+ * true, a blank map is created so tests start from a known state.
+ */
+export async function openApp(page: Page, language: 'en' | 'zh-CN' = 'en', { welcome = false } = {}) {
   await page.addInitScript((lang) => {
     if (!localStorage.getItem('wen2tu.language')) localStorage.setItem('wen2tu.language', lang)
   }, language)
   await page.goto('/')
   await expect(page.locator('me-root me-tpc')).toBeVisible()
   await expect(page.getByTestId('save-status')).not.toBeEmpty()
+  if (welcome) return
+  const zh = language === 'zh-CN'
+  await page.getByRole('navigation').getByRole('button', { name: zh ? '新建' : 'New', exact: true }).click()
+  await page.getByRole('menuitem', { name: zh ? '空白脑图' : 'Blank map' }).click()
+  await expect(page.locator('me-root me-tpc')).toHaveText(zh ? '中心主题' : 'Central topic')
 }
 
 /** Adds a child under the root node and types its text. */

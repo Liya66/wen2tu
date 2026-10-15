@@ -176,3 +176,16 @@ describe('light versions for transparent export', () => {
     expect(contrastOnWhite(darkenForWhite('#fdeccd'))).toBeGreaterThanOrEqual(2.9)
   })
 })
+
+describe('welcome map', () => {
+  it('is a valid map in both languages, linking to the repository', async () => {
+    const { createWelcomeMap } = await import('../onboarding/welcomeMap')
+    for (const language of ['en', 'zh-CN'] as const) {
+      const { title, map } = createWelcomeMap(language)
+      expect(title).toBeTruthy()
+      expect(parseDocument(serializeMap(map)).map).toEqual(map)
+      expect(JSON.stringify(map)).toContain('"hyperLink":"https://github.com/Liya66/wen2tu"')
+      expect(map.nodeData.children!.length).toBeGreaterThanOrEqual(5)
+    }
+  })
+})
