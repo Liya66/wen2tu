@@ -192,11 +192,15 @@ export function MindMapCanvas({ language, label, newTopicName, onReady, onChange
       styledIndex = null
       return engineLinkDiv.apply(this, args)
     }
+    // With a map-wide shape every subtopic is drawn boxed (see app.css), except
+    // where the topic's own style says otherwise.
+    const kindOf = (style: MapNode['style']) =>
+      topicKind(style) ?? (savedShape && style?.border !== 'none' ? ('box' as const) : null)
     const styledTopicAt = (top: number, left: number, width: number, height: number) => {
       if (!styledIndex) {
         styledIndex = new Map()
         for (const tpc of mind.nodes.querySelectorAll<Topic>('me-children me-tpc')) {
-          if (!topicKind(tpc.nodeObj?.style as MapNode['style'])) continue
+          if (!kindOf(tpc.nodeObj?.style as MapNode['style'])) continue
           const wrapper = tpc.parentElement!
           const key = `${wrapper.offsetTop},${wrapper.offsetLeft},${wrapper.offsetWidth},${wrapper.offsetHeight}`
           if (!styledIndex.has(key)) styledIndex.set(key, tpc)
@@ -210,13 +214,13 @@ export function MindMapCanvas({ language, label, newTopicName, onReady, onChange
       const parentTopic = params.isFirst ? undefined : styledTopicAt(params.pT, params.pL, params.pW, params.pH)
       const gap = parseInt(this.container.style.getPropertyValue('--node-gap-x')) || 30
       const child = childTopic && {
-        kind: topicKind(childTopic.nodeObj.style as MapNode['style'])!,
+        kind: kindOf(childTopic.nodeObj.style as MapNode['style'])!,
         top: params.cT + childTopic.offsetTop,
         left: params.cL + childTopic.offsetLeft,
         width: childTopic.offsetWidth,
         height: childTopic.offsetHeight,
       }
-      const parentKind = parentTopic ? (topicKind(parentTopic.nodeObj.style as MapNode['style']) ?? undefined) : undefined
+      const parentKind = parentTopic ? (kindOf(parentTopic.nodeObj.style as MapNode['style']) ?? undefined) : undefined
       return subBranchPath(params, gap, child, parentKind)
     }
 
@@ -268,13 +272,25 @@ export function MindMapCanvas({ language, label, newTopicName, onReady, onChange
     const mainBranchColors = new WeakMap<NodeObj, string>()
     const afterLinkDiv = () => {
       for (const tpc of mind.nodes.querySelectorAll<Topic>('me-main > me-wrapper > me-parent > me-tpc')) {
-        if (tpc.style.borderColor) mainBranchColors.set(tpc.nodeObj, toHexColor(tpc.style.borderColor))
+        if (tpc.style.borderColor) {
+          const color = toHexColor(tpc.style.borderColor)
+          mainBranchColors.set(tpc.nodeObj, color)
+          // Boxed subtopics (map-wide shape) outline themselves in their branch color.
+          tpc.closest<HTMLElement>('me-wrapper')?.style.setProperty('--wen2tu-branch', color)
+        }
         const style = tpc.nodeObj?.style as MapNode['style'] | undefined
         if (style?.border) tpc.style.border = style.border
         if (style?.borderBottom) tpc.style.borderBottom = style.borderBottom
       }
     }
+    const afterLinkDivSubBranches = () => {
+      for (const tpc of mind.nodes.querySelectorAll<Topic>('me-children me-tpc')) {
+        const color = tpc.nodeObj?.branchColor
+        if (color) tpc.closest<HTMLElement>('me-wrapper')?.style.setProperty('--wen2tu-branch', color)
+      }
+    }
     mind.bus.addListener('linkDiv', afterLinkDiv)
+    mind.bus.addListener('linkDiv', afterLinkDivSubBranches)
     const lineColorOf = (node: NodeObj): string | undefined => {
       for (let current: NodeObj | undefined = node; current?.parent; current = current.parent) {
         if (current.branchColor) return current.branchColor
@@ -291,6 +307,7 @@ export function MindMapCanvas({ language, label, newTopicName, onReady, onChange
         refresh,
       )
       mind.container.style.setProperty('--wen2tu-sub-radius', savedShape ? SHAPE_RADII[savedShape].sub : '')
+      mind.container.classList.toggle('wen2tu-shaped', Boolean(savedShape))
     }
     const onSystemThemeChange = () => {
       if (!savedTheme) applyTheme(true)

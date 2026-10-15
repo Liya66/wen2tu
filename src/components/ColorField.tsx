@@ -2,9 +2,22 @@ import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toHexColor } from '../features/appearance/nodeStyles'
 
-// Logo colors (ink, white, blossom, carrot, leaf, pebble, cream) plus red and yellow.
-// Nine swatches, the optional "default" and the picker fit on one row.
-const SWATCHES = ['#2c2d35', '#ffffff', '#fc9e9f', '#ff9341', '#77b26c', '#a7a6a9', '#fdeccd', '#e5484d', '#f5c542']
+// Logo colors (ink, white, blossom, carrot, leaf, pebble, cream), then red,
+// yellow, blue and purple. Every row has 12 cells (picker included), so rows
+// line up with each other and with the branch palette chips.
+const SWATCHES = [
+  '#2c2d35',
+  '#ffffff',
+  '#fc9e9f',
+  '#ff9341',
+  '#77b26c',
+  '#a7a6a9',
+  '#fdeccd',
+  '#e5484d',
+  '#f5c542',
+  '#3b82f6',
+  '#8b5cf6',
+]
 
 interface Props {
   label: string
@@ -59,7 +72,7 @@ export function ColorField({ label, value, fallback, onPreview, onCommit, clearL
             <span className="visually-hidden">{clearLabel}</span>
           </button>
         )}
-        {SWATCHES.map((color) => (
+        {(clearLabel ? SWATCHES.slice(0, -1) : SWATCHES).map((color) => (
           <button
             key={color}
             type="button"

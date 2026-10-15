@@ -612,10 +612,17 @@ kbd {
   }
 }
 
-/* Map-wide shape for boxed subtopics that have no corners of their own
-   (the variable is set by the canvas; 3px is Mind Elixir's default). */
+/* Map-wide shape for subtopics without corners of their own (the variable is
+   set by the canvas; 3px is Mind Elixir's default). */
 .canvas .map-container me-children me-tpc {
   border-radius: var(--wen2tu-sub-radius, 3px);
+}
+
+/* With a map-wide shape, every subtopic is outlined in its branch color.
+   A topic's own style (inline) still wins. */
+.canvas .map-container.wen2tu-shaped me-children me-tpc {
+  border: 2px solid var(--wen2tu-branch, var(--main-color));
+  padding: 4px 10px;
 }
 
 /* ---- style panel ---- */
@@ -721,17 +728,17 @@ kbd {
 }
 
 .color-row {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 3px;
+  /* 12 equal cells spanning the panel width, aligned with the palette chips. */
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 4px;
 }
 
 .swatch {
   position: relative;
-  flex: 0 0 auto;
-  /* 11 swatches (default + 9 colors + picker) stay on one row, even with a scrollbar. */
-  width: 19px;
-  height: 19px;
+  width: 100%;
+  max-width: 24px;
+  aspect-ratio: 1;
   padding: 0;
   border: 1px solid rgb(0 0 0 / 15%);
   border-radius: 50%;

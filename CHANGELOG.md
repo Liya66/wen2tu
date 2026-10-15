@@ -14,7 +14,7 @@
 - Chinese interface by default (English one click away).
 - A welcome map on first visit (about wen2tu, AI tip, shortcuts, files, next steps, open source) that follows the interface language until edited; reopen it from Settings.
 - Large maps open zoomed out to fit the screen (down to 60%).
-- Bunny logo, app icons and a warm interface palette taken from the logo; maps use the matching “wen2tu” / “wen2tu Night” color schemes by default.
+- Bunny logo, app icons and a warm interface palette taken from the logo; maps use the matching “文兔兔 / wen2tu” and “夜兔兔 / ye2tu” color schemes by default.
 - 12 color schemes plus custom colors and branch palettes; layout direction and compact spacing.
 - 9 map templates in both languages.
 - Topic style panel: corner shape, outline/underline borders, fills, text color/size/bold/italic/strikethrough, branch colors. Color pickers preview live and commit once, as a single undo step.
