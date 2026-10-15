@@ -299,4 +299,30 @@ describe('WorkspaceController', () => {
     await vi.runAllTimersAsync()
     expect((await store.listDocs()).length).toBeGreaterThanOrEqual(2)
   })
+
+  it('downloads instead when the browser refuses to write a newly picked file', async () => {
+    const { controller } = await setup()
+    const handle = new FakeHandle('x.mind.json', '')
+    handle.createWritable = async () => {
+      throw new DOMException('not allowed', 'NotAllowedError')
+    }
+    const download = vi.fn()
+    Object.assign(window, {
+      showOpenFilePicker: async () => [],
+      showSaveFilePicker: async () => handle,
+    })
+    Object.assign(URL, { createObjectURL: () => 'blob:x', revokeObjectURL: () => {} })
+    HTMLAnchorElement.prototype.click = download
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      await expect(controller.saveAs()).resolves.toBe(true)
+      expect(download).toHaveBeenCalledOnce()
+      const state = controller.getState()
+      expect(state.active).toMatchObject({ linked: false, saveState: 'saved', savedVia: 'download' })
+      expect(state.notices.some((n) => n.kind === 'downloaded')).toBe(true)
+    } finally {
+      delete (window as { showOpenFilePicker?: unknown }).showOpenFilePicker
+      delete (window as { showSaveFilePicker?: unknown }).showSaveFilePicker
+    }
+  })
 })

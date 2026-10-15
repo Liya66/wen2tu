@@ -91,6 +91,10 @@ export interface WorkspaceState {
 const PERSIST_DELAY = 300
 const AUTO_WRITE_DELAY = 1500
 
+function isPlatformRefusal(error: unknown): boolean {
+  return error instanceof DOMException && (error.name === 'NotAllowedError' || error.name === 'SecurityError')
+}
+
 function isDirty(doc: WorkspaceDoc): boolean {
   return doc.savedText === undefined || doc.workingText !== doc.savedText
 }
@@ -585,7 +589,7 @@ export class WorkspaceController {
     doc.fileName = handle.name
     doc.title = titleFromFileName(handle.name)
     doc.fileLastModified = undefined
-    return this.writeToFile(doc, { interactive: true, force: true })
+    return this.writeToFile(doc, { interactive: true, force: true, fallbackToDownload: true })
   }
 
   private downloadCopy(doc: WorkspaceDoc): boolean {
@@ -601,7 +605,11 @@ export class WorkspaceController {
 
   private async writeToFile(
     doc: WorkspaceDoc,
-    { interactive, force = false }: { interactive: boolean; force?: boolean },
+    {
+      interactive,
+      force = false,
+      fallbackToDownload = false,
+    }: { interactive: boolean; force?: boolean; fallbackToDownload?: boolean },
   ): Promise<boolean> {
     return this.enqueue(async () => {
       const handle = doc.handle
@@ -631,6 +639,14 @@ export class WorkspaceController {
         await this.saveRecord(doc)
         return true
       } catch (error) {
+        // A freshly picked file the browser then refuses to write (embedded
+        // browsers, enterprise policies): unlink it and download instead.
+        if (fallbackToDownload && isPlatformRefusal(error)) {
+          console.warn('[wen2tu] writing refused, downloading instead', error)
+          doc.handle = undefined
+          doc.fileLastModified = undefined
+          return this.downloadCopy(doc)
+        }
         this.failedDocId = doc.id
         this.showError(error)
         return false
