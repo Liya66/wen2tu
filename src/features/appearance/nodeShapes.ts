@@ -3,8 +3,8 @@ import type { NodeShape } from '../mindmap/types'
 /*
  * Geometry of the extra topic shapes. Shapes in OUTLINE_SHAPES are drawn as an
  * SVG outline behind the topic, generated for the topic's exact pixel size so
- * corners, notches and bumps never stretch. The others (ellipse, leaf, double,
- * card, note) are plain CSS in mapRendering.css.
+ * corners, notches and bumps never stretch. The others (ellipse, double, card,
+ * note) are plain CSS in mapRendering.css.
  */
 
 export const OUTLINE_SHAPES: ReadonlySet<NodeShape> = new Set<NodeShape>([
@@ -16,6 +16,7 @@ export const OUTLINE_SHAPES: ReadonlySet<NodeShape> = new Set<NodeShape>([
   'ticket',
   'folder',
   'cloud',
+  'leaf',
 ])
 
 /** Shapes with a distinct inner/outer side; mirrored for topics on the left. */
@@ -23,25 +24,75 @@ export const SIDED_SHAPES: ReadonlySet<NodeShape> = new Set<NodeShape>(['flag', 
 
 const r1 = (n: number) => Math.round(n * 10) / 10
 
-/** Scalloped outline: bumps along each edge of a box inset by the bump size. */
+// Cloud lobes after the big first one: [radius, top] as fractions of the height.
+const LOBES: ReadonlyArray<readonly [number, number]> = [
+  [0.42, 0],
+  [0.31, 0.17],
+  [0.36, 0.07],
+  [0.29, 0.2],
+  [0.34, 0.1],
+]
+
+interface Circle {
+  x: number
+  y: number
+  r: number
+}
+
+/**
+ * Cloud like ☁️: a flat base under a row of uneven lobes — a small one on the
+ * left, the biggest next to it, then smaller ones, ending in a medium lobe on
+ * the right. The outline follows each lobe from where it meets the previous
+ * one to where it meets the next. Wide topics stretch the lobes a little
+ * before adding more of them.
+ */
 function cloudPath(w: number, h: number): string {
-  const inset = Math.max(5, Math.min(12, h * 0.2))
-  const across = Math.max(2, Math.round((w - 2 * inset) / (2.2 * inset)))
-  const down = Math.max(1, Math.round((h - 2 * inset) / (2.2 * inset)))
-  const stepX = (w - 2 * inset) / across
-  const stepY = (h - 2 * inset) / down
-  const parts = [`M ${r1(inset)} ${r1(inset)}`]
-  const arc = (r: number, x: number, y: number) => `A ${r1(r)} ${r1(r)} 0 0 1 ${r1(x)} ${r1(y)}`
-  for (let i = 1; i <= across; i++) parts.push(arc(stepX / 2, inset + i * stepX, inset))
-  for (let i = 1; i <= down; i++) parts.push(arc(stepY / 2, w - inset, inset + i * stepY))
-  for (let i = 1; i <= across; i++) parts.push(arc(stepX / 2, w - inset - i * stepX, h - inset))
-  for (let i = 1; i <= down; i++) parts.push(arc(stepY / 2, inset, h - inset - i * stepY))
+  const sx = Math.min(1.3, Math.max(1, w / (3 * h)))
+  const width = w / sx
+  const left = 0.3 * h
+  const right = 0.4 * h
+  const span = width - left - right
+  const count = Math.max(1, Math.round(span / (0.6 * h)))
+  // Gaps between lobe centres; the last one is wider so the big lobe sits left of centre.
+  const total = count + 1.25
+  const circles: Circle[] = [{ x: left, y: h - left, r: left }]
+  for (let i = 0; i < count; i++) {
+    const [r, top] = LOBES[i % LOBES.length]
+    circles.push({ x: left + (span * (i + 1)) / total, y: (top + r) * h, r: r * h })
+  }
+  circles.push({ x: width - right, y: h - right, r: right })
+
+  const X = (x: number) => r1(x * sx)
+  const angle = (c: Circle, x: number, y: number) => Math.atan2(y - c.y, x - c.x)
+  let from = { x: left, y: h }
+  const parts = [`M ${X(from.x)} ${r1(h)}`]
+  circles.forEach((a, i) => {
+    const b = circles[i + 1]
+    let to = { x: a.x, y: h }
+    if (b) {
+      // Upper crossing point of this lobe and the next.
+      const dx = b.x - a.x
+      const dy = b.y - a.y
+      const d = Math.hypot(dx, dy)
+      const along = (a.r * a.r - b.r * b.r + d * d) / (2 * d)
+      const off = Math.sqrt(Math.max(0, a.r * a.r - along * along))
+      const mx = a.x + (dx * along) / d
+      const my = a.y + (dy * along) / d
+      const p = { x: mx + (dy * off) / d, y: my - (dx * off) / d }
+      const q = { x: mx - (dy * off) / d, y: my + (dx * off) / d }
+      to = p.y < q.y ? p : q
+    }
+    let sweep = angle(a, to.x, to.y) - angle(a, from.x, from.y)
+    while (sweep < 0) sweep += 2 * Math.PI
+    parts.push(`A ${X(a.r)} ${r1(a.r)} 0 ${sweep > Math.PI ? 1 : 0} 1 ${X(to.x)} ${r1(to.y)}`)
+    from = to
+  })
   return parts.join(' ') + ' Z'
 }
 
-/** Mirrors x coordinates of an absolute path (only M/L/H/V/A/Z/Q commands are used here). */
+/** Mirrors x coordinates of an absolute path (only M/L/H/V/A/Z/Q/C commands are used here). */
 function mirror(path: string, w: number): string {
-  return path.replace(/([MLHAQ])([^MLHVAQZ]*)/g, (_all, command: string, args: string) => {
+  return path.replace(/([MLHAQC])([^MLHVAQCZ]*)/g, (_all, command: string, args: string) => {
     const n = args.trim().split(/[\s,]+/).filter(Boolean).map(Number)
     if (command === 'H') return `H ${r1(w - n[0])} `
     if (command === 'A') {
@@ -109,6 +160,15 @@ export function outlinePath(shape: NodeShape, w: number, h: number, mirrored = f
     case 'cloud':
       d = cloudPath(w, h)
       break
+    case 'leaf': {
+      // Pointed at the top inner and bottom outer corners, full curves between.
+      const c = r1(Math.min(w / 2, h * 1.6))
+      const k = r1(c * 0.45)
+      d =
+        `M 0 0 H ${r1(w - c)} C ${r1(w - k)} 0 ${w} ${r1(h * 0.45)} ${w} ${h} ` +
+        `H ${c} C ${k} ${h} 0 ${r1(h * 0.55)} 0 0 Z`
+      break
+    }
     default:
       return ''
   }
@@ -130,8 +190,6 @@ export function previewParts(shape: NodeShape, w: number, h: number): PreviewPar
   switch (shape) {
     case 'ellipse':
       return [{ d: `M 0 ${h / 2} A ${w / 2} ${h / 2} 0 1 0 ${w} ${h / 2} A ${w / 2} ${h / 2} 0 1 0 0 ${h / 2} Z` }]
-    case 'leaf':
-      return [{ d: `M 0 0 H ${w / 2} Q ${w} 0 ${w} ${h / 2} V ${h} H ${w / 2} Q 0 ${h} 0 ${h / 2} Z` }]
     case 'double':
       return [
         { d: `M 0 0 H ${w} V ${h} H 0 Z`, hollow: true },

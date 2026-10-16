@@ -30,6 +30,19 @@ describe('shape geometry', () => {
     expect(arcs(300)).toBeGreaterThan(arcs(100))
   })
 
+  it('draws an uneven cloud with a flat base', () => {
+    const d = outlinePath('cloud', 160, 50)
+    const radii = [...d.matchAll(/A (\S+) /g)].map((m) => Number(m[1]))
+    expect(radii[0]).not.toBe(radii.at(-1))
+    expect(Math.max(...radii)).toBe(radii[1])
+    expect(d).toMatch(/ 50 Z$/)
+  })
+
+  it('mirrors the leaf on the left side', () => {
+    expect(outlinePath('leaf', 100, 30)).toMatch(/^M 0 0 /)
+    expect(outlinePath('leaf', 100, 30, true)).toMatch(/^M 100 0 /)
+  })
+
   it('has a preview for every shape', () => {
     for (const shape of NODE_SHAPES) expect(previewParts(shape, 36, 20).length, shape).toBeGreaterThan(0)
   })

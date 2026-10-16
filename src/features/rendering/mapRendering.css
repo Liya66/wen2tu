@@ -26,7 +26,6 @@
 /* CSS-drawn shapes keep the topic's own border and fill; these are defaults. */
 .canvas .map-container me-children me-tpc:is(
     [data-shape='ellipse'],
-    [data-shape='leaf'],
     [data-shape='double'],
     [data-shape='card'],
     [data-shape='note']
@@ -38,16 +37,6 @@
 .canvas .map-container me-tpc[data-shape='ellipse'] {
   border-radius: 50% !important;
   padding: 10px 24px !important;
-}
-
-.canvas .map-container me-tpc[data-shape='leaf'] {
-  /* Pointed top-left and bottom-right, rounded on the other two corners. */
-  border-radius: 2px 60% / 2px 100% !important;
-  padding: 7px 22px !important;
-}
-
-.canvas .map-container .lhs me-tpc[data-shape='leaf'] {
-  border-radius: 60% 2px / 100% 2px !important;
 }
 
 .canvas .map-container me-tpc[data-shape='double'] {
@@ -92,7 +81,8 @@
     [data-shape='tag'],
     [data-shape='ticket'],
     [data-shape='folder'],
-    [data-shape='cloud']
+    [data-shape='cloud'],
+    [data-shape='leaf']
   ) {
   border: 0 !important;
   border-radius: 0 !important;
@@ -154,7 +144,12 @@
 }
 
 .canvas .map-container me-tpc[data-shape='cloud'] {
-  padding: 16px 26px !important;
+  /* Room above the text for the lobes; the base is flat. */
+  padding: 22px 24px 8px !important;
+}
+
+.canvas .map-container me-tpc[data-shape='leaf'] {
+  padding: 10px 24px !important;
 }
 
 /* ---- Branch lines: strength and width (variables set by mapRendering.ts) ---- */
