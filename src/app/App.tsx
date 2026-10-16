@@ -9,7 +9,7 @@ import { ShortcutsDialog } from '../components/ShortcutsDialog'
 import { StatusBar } from '../components/StatusBar'
 import { StylePanel } from '../components/StylePanel'
 import { TemplateDialog } from '../components/TemplateDialog'
-import { createMapFromTemplate } from '../features/appearance/templates'
+import { applyTemplateLook, createMapFromTemplate } from '../features/appearance/templates'
 import { looksLikeOutline } from '../features/import-export/outlineText'
 import { createWelcomeMap } from '../features/onboarding/welcomeMap'
 import { Toolbar } from '../components/Toolbar'
@@ -251,12 +251,13 @@ export function App() {
 
       <TemplateDialog
         open={templatesOpen}
+        language={language}
         onClose={() => setTemplatesOpen(false)}
         onPick={(template) => {
-          setTemplatesOpen(false)
           const map = createMapFromTemplate(template, language)
           controller.newDoc(map, template.id === 'blank' ? undefined : map.nodeData.topic)
         }}
+        onApply={(template, text) => controller.importText(text, (map) => applyTemplateLook(map, template))}
       />
 
       <Dialog

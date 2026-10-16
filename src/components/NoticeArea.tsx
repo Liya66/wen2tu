@@ -56,6 +56,8 @@ export function NoticeArea({ notices, controller }: Props) {
         return { tone: 'info', text: t('notices.downloaded', { file: notice.fileName }) }
       case 'imported':
         return { tone: 'info', text: t('notices.imported', { file: notice.fileName }) }
+      case 'copied-markdown':
+        return { tone: 'info', text: t('notices.copiedMarkdown') }
       case 'storage-unavailable':
         return { tone: 'warning', text: t('notices.storageUnavailable') }
       case 'error':

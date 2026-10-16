@@ -22,7 +22,7 @@ import { sanitizeNodeTree } from '../features/mindmap/schema'
 import { escapeHtml } from '../features/mindmap/sanitize'
 import type { StylePatch } from '../features/appearance/nodeStyles'
 import { lightVariantOf, systemTheme } from '../features/appearance/themes'
-import type { Direction, MapNode, MapTheme, MindMap, ThemeVar } from '../features/mindmap/types'
+import type { Direction, MapNode, MapTheme, MindMap, NodeShape, ThemeVar } from '../features/mindmap/types'
 import type { CanvasAdapter } from '../features/workspace/workspaceController'
 
 const ENGINE_LOCALES: Record<Language, LangPack> = {
@@ -69,6 +69,8 @@ export interface SelectedNode {
   depth: number
   style: MapNode['style']
   branchColor?: string
+  /** Extra shape, if any. */
+  shape?: NodeShape
   /** Color of the branch line leading to this topic (undefined for the root). */
   lineColor?: string
 }
@@ -92,8 +94,11 @@ export interface EditorApi extends CanvasAdapter {
   selection(): SelectedNode[]
   /** Shows a style on the selected topics without re-layout or an undo step. */
   previewNodeStyle(makePatch: (node: SelectedNode) => StylePatch): void
-  /** Applies a style to every selected topic as a single undo step. */
-  applyNodeStyle(makePatch: (node: SelectedNode) => StylePatch): void
+  /**
+   * Applies a style to every selected topic as a single undo step. `shape`
+   * sets an extra shape on them too (null removes it).
+   */
+  applyNodeStyle(makePatch: (node: SelectedNode) => StylePatch, options?: { shape?: NodeShape | null }): void
   setBranchColor(color: string | undefined): void
   /** Parses an outline and adds it under the selected topic; false if nothing is selected. */
   pasteOutline(text: string): Promise<boolean>
@@ -199,6 +204,7 @@ export function MindMapCanvas({
         depth: depthOf(tpc.nodeObj),
         style: { ...(tpc.nodeObj.style as MapNode['style']) },
         branchColor: tpc.nodeObj.branchColor,
+        shape: (tpc.nodeObj as NodeObj & { shape?: NodeShape }).shape,
         lineColor: lineColorOf(tpc.nodeObj),
       }))
     // Selection events can arrive in bursts (e.g. undo re-selects); report once.
@@ -385,12 +391,14 @@ export function MindMapCanvas({
           }
         }
       },
-      applyNodeStyle: (makePatch) => {
+      applyNodeStyle: (makePatch, options) => {
         const nodes = [...(mind.currentNodes ?? [])]
         if (!nodes.length) return
         const selected = selection()
         nodes.forEach((tpc, index) => {
-          const obj = tpc.nodeObj
+          const obj = tpc.nodeObj as NodeObj & { shape?: NodeShape }
+          if (options?.shape === null) delete obj.shape
+          else if (options?.shape) obj.shape = options.shape
           const style: Record<string, string> = { ...(obj.style as Record<string, string>) }
           for (const [key, value] of Object.entries(makePatch(selected[index]))) {
             if (value) style[key] = value

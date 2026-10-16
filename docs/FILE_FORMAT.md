@@ -50,6 +50,7 @@ wen2tu saves mind maps as UTF-8 JSON with a small versioned envelope, so files s
 | `hyperLink` | string | `http:`, `https:` or `mailto:` URL. |
 | `note` | string | Free-form note. |
 | `branchColor` | string | CSS color of the branch line. |
+| `shape` | string | Optional extra shape: `card`, `diamond`, `flag`, `hexagon`, `chamfer`, `note`, `ellipse`, `cloud`, `leaf`, `ticket`, `folder`, `double`, `tag`. Unknown values are ignored (the topic shows as a regular box). |
 | `image` | object | `{ url, width, height, fit? }`; `url` must be `https:` or a raster `data:` URL. |
 
 ### Theme

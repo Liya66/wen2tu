@@ -1,7 +1,8 @@
 import type { MainLineParams, MindElixirInstance, NodeObj, SubLineParams, Theme, Topic } from 'mind-elixir'
 import { mainBranchPath, subBranchPath, topicKind } from '../appearance/branchPath'
 import { toHexColor } from '../appearance/nodeStyles'
-import type { MapNode, MapTheme, MindMap } from '../mindmap/types'
+import { OUTLINE_SHAPES, outlinePath } from '../appearance/nodeShapes'
+import type { MapNode, MapTheme, MindMap, NodeShape } from '../mindmap/types'
 import './mapRendering.css'
 
 /*
@@ -19,6 +20,16 @@ export const SHAPE_RADII: Record<MapShape, { root: string; main: string; sub: st
 }
 
 type SubBranch = NonNullable<Theme['generateSubBranch']>
+type ShapedNode = NodeObj & { shape?: NodeShape }
+
+const SVG_NS = 'http://www.w3.org/2000/svg'
+const DASHES: Record<string, string> = { solid: 'none', dashed: '6 4', dotted: '1.5 3.5' }
+const BORDER = /^(\d+(?:\.\d+)?)px\s+(solid|dashed|dotted)\s+(.+)$/
+
+function parseBorder(value: string | undefined) {
+  const match = value?.match(BORDER)
+  return match ? { width: Number(match[1]), style: match[2], color: match[3] } : null
+}
 type MainBranch = NonNullable<Theme['generateMainBranch']>
 
 export function toEngineTheme(
@@ -67,13 +78,17 @@ export function installMapRendering(mind: MindElixirInstance, getShape: () => Ma
   }
   // With a map-wide shape every subtopic is drawn boxed, except where the
   // topic's own style says otherwise.
-  const kindOf = (style: MapNode['style']) =>
-    topicKind(style) ?? (getShape() && style?.border !== 'none' ? ('box' as const) : null)
+  const kindOf = (node: NodeObj | undefined) => {
+    const style = node?.style as MapNode['style']
+    // Extra shapes are always drawn as boxes.
+    if ((node as ShapedNode | undefined)?.shape) return 'box' as const
+    return topicKind(style) ?? (getShape() && style?.border !== 'none' ? ('box' as const) : null)
+  }
   const styledTopicAt = (top: number, left: number, width: number, height: number) => {
     if (!styledIndex) {
       styledIndex = new Map()
       for (const tpc of mind.nodes.querySelectorAll<Topic>('me-children me-tpc')) {
-        if (!kindOf(tpc.nodeObj?.style as MapNode['style'])) continue
+        if (!kindOf(tpc.nodeObj)) continue
         const wrapper = tpc.parentElement!
         const key = `${wrapper.offsetTop},${wrapper.offsetLeft},${wrapper.offsetWidth},${wrapper.offsetHeight}`
         if (!styledIndex.has(key)) styledIndex.set(key, tpc)
@@ -87,16 +102,26 @@ export function installMapRendering(mind: MindElixirInstance, getShape: () => Ma
     const parentTopic = params.isFirst ? undefined : styledTopicAt(params.pT, params.pL, params.pW, params.pH)
     const gap = parseInt(this.container.style.getPropertyValue('--node-gap-x')) || 30
     const child = childTopic && {
-      kind: kindOf(childTopic.nodeObj.style as MapNode['style'])!,
+      kind: kindOf(childTopic.nodeObj)!,
       top: params.cT + childTopic.offsetTop,
       left: params.cL + childTopic.offsetLeft,
       width: childTopic.offsetWidth,
       height: childTopic.offsetHeight,
     }
-    const parentKind = parentTopic ? (kindOf(parentTopic.nodeObj.style as MapNode['style']) ?? undefined) : undefined
+    const parentKind = parentTopic ? (kindOf(parentTopic.nodeObj) ?? undefined) : undefined
     return subBranchPath(params, gap, child, parentKind)
   }
   const branches = { sub, main }
+
+  // Extra shapes: mark topics when they are created, so the shape's padding is
+  // part of the layout (see mapRendering.css).
+  const engineCreateTopic = mind.createTopic
+  mind.createTopic = function (nodeObj) {
+    const tpc = engineCreateTopic.call(this, nodeObj)
+    const shape = (nodeObj as ShapedNode).shape
+    if (shape) tpc.dataset.shape = shape
+    return tpc
+  }
 
   // The engine paints first-level topics' borders in their branch color on
   // every layout. Remember that color (subtopics inherit it), then let a
@@ -118,7 +143,43 @@ export function installMapRendering(mind: MindElixirInstance, getShape: () => Ma
       const color = tpc.nodeObj?.branchColor
       if (color) tpc.closest<HTMLElement>('me-wrapper')?.style.setProperty('--wen2tu-branch', color)
     }
+    // After layout, sizes are final: color and outline every shaped topic.
+    for (const tpc of mind.nodes.querySelectorAll<Topic>('me-tpc[data-shape]')) drawShape(tpc)
   })
+
+  /** Sets a shaped topic's colors and (for outline shapes) its SVG outline. */
+  const drawShape = (tpc: Topic) => {
+    const node = tpc.nodeObj as ShapedNode
+    const shape = node.shape
+    if (!shape) return
+    const style = (node.style ?? {}) as NonNullable<MapNode['style']>
+    const depth = !node.parent ? 0 : !node.parent.parent ? 1 : 2
+    const border = parseBorder(style.border) ?? parseBorder(style.borderBottom)
+    const stroke = border?.color ?? lineColorOf(node) ?? 'var(--root-bgcolor)'
+    let fill: string
+    if (style.background) fill = style.background
+    else if (depth === 0) fill = 'var(--root-bgcolor)'
+    else if (depth === 1) fill = 'var(--main-bgcolor)'
+    else fill = `color-mix(in srgb, ${stroke} 16%, var(--bgcolor))`
+    tpc.style.setProperty('--wen2tu-shape-stroke', stroke)
+    tpc.style.setProperty('--wen2tu-shape-fill', fill)
+    tpc.style.setProperty('--wen2tu-shape-width', String(border?.width ?? 2))
+    tpc.style.setProperty('--wen2tu-shape-dash', DASHES[border?.style ?? 'solid'])
+
+    if (!OUTLINE_SHAPES.has(shape)) return
+    let svg = tpc.querySelector<SVGSVGElement>(':scope > svg.wen2tu-shape')
+    if (!svg) {
+      svg = document.createElementNS(SVG_NS, 'svg')
+      svg.setAttribute('class', 'wen2tu-shape')
+      svg.setAttribute('aria-hidden', 'true')
+      svg.appendChild(document.createElementNS(SVG_NS, 'path'))
+      tpc.prepend(svg)
+    }
+    const w = tpc.offsetWidth
+    const h = tpc.offsetHeight
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`)
+    svg.firstElementChild!.setAttribute('d', outlinePath(shape, w, h, Boolean(tpc.closest('.lhs'))))
+  }
 
   /** Color of the branch line leading to a topic (undefined for the root). */
   const lineColorOf = (node: NodeObj): string | undefined => {

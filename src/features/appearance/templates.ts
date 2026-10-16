@@ -1,16 +1,22 @@
 import type { Language } from '../../i18n'
 import { createNode } from '../mindmap/document'
-import type { Direction, MapNode, MindMap } from '../mindmap/types'
+import type { Direction, MapNode, MindMap, NodeShape } from '../mindmap/types'
+import { exportMarkdown } from '../import-export/markdownExport'
 import { findPreset } from './themes'
 
-/** [topic, children?] — a compact way to write a tree. */
-type Outline = [string, Outline[]?]
+/** [topic, children?, shape?] — a compact way to write a tree. */
+type Outline = [string, Outline[]?, NodeShape?]
 
 export interface MapTemplate {
   id: string
   /** Theme preset id; undefined follows the system. */
   theme?: string
   direction: Direction
+  /**
+   * Topic shape by depth: [center, first level, second level, …]. Also applied
+   * when the user's own outline is poured into the template.
+   */
+  levels?: Array<NodeShape | undefined>
   content: Record<Language, Outline>
 }
 
@@ -28,6 +34,7 @@ export const TEMPLATES: MapTemplate[] = [
     id: 'project',
     theme: 'ocean',
     direction: SIDE,
+    levels: ['card', 'card'],
     content: {
       en: [
         'Project plan',
@@ -57,6 +64,7 @@ export const TEMPLATES: MapTemplate[] = [
     id: 'meeting',
     theme: 'mono',
     direction: RIGHT,
+    levels: ['double', 'note'],
     content: {
       en: [
         'Meeting notes',
@@ -84,6 +92,7 @@ export const TEMPLATES: MapTemplate[] = [
     id: 'swot',
     theme: 'macaron',
     direction: SIDE,
+    levels: [undefined, 'hexagon'],
     content: {
       en: [
         'SWOT analysis',
@@ -109,6 +118,7 @@ export const TEMPLATES: MapTemplate[] = [
     id: 'reading',
     theme: 'forest',
     direction: RIGHT,
+    levels: ['card', 'leaf'],
     content: {
       en: [
         'Book title',
@@ -136,6 +146,7 @@ export const TEMPLATES: MapTemplate[] = [
     id: 'weekly',
     theme: 'sakura',
     direction: SIDE,
+    levels: [undefined, 'note'],
     content: {
       en: [
         'This week',
@@ -163,6 +174,7 @@ export const TEMPLATES: MapTemplate[] = [
     id: 'brainstorm',
     theme: 'sunset',
     direction: SIDE,
+    levels: ['ellipse', 'cloud'],
     content: {
       en: [
         'Big question',
@@ -188,6 +200,7 @@ export const TEMPLATES: MapTemplate[] = [
     id: 'decision',
     theme: 'midnight',
     direction: RIGHT,
+    levels: ['diamond', 'flag'],
     content: {
       en: [
         'Decision',
@@ -213,21 +226,139 @@ export const TEMPLATES: MapTemplate[] = [
     id: 'org',
     theme: 'bunny',
     direction: DOWN,
+    levels: ['double', 'card'],
     content: {
       en: ['Organization', [['Team A', [['Member'], ['Member']]], ['Team B', [['Member']]], ['Team C']]],
       'zh-CN': ['组织架构', [['团队 A', [['成员'], ['成员']]], ['团队 B', [['成员']]], ['团队 C']]],
     },
   },
+  {
+    id: 'trip',
+    theme: 'sunset',
+    direction: SIDE,
+    levels: ['ticket', 'flag', 'tag'],
+    content: {
+      en: [
+        'Tokyo in 5 days',
+        [
+          ['Itinerary', [['Day 1 · Asakusa'], ['Day 2 · Shibuya'], ['Day 3 · Kamakura']]],
+          ['Getting around', [['Flights'], ['Metro card']]],
+          ['Stay', [['Hotel booking number']]],
+          ['Packing list', [['Passport'], ['Plug adapter'], ['Power bank']]],
+        ],
+      ],
+      'zh-CN': [
+        '东京五日游',
+        [
+          ['行程', [['第 1 天 · 浅草'], ['第 2 天 · 涩谷'], ['第 3 天 · 镰仓']]],
+          ['交通', [['机票'], ['地铁卡']]],
+          ['住宿', [['酒店确认号']]],
+          ['打包清单', [['护照'], ['转换插头'], ['充电宝']]],
+        ],
+      ],
+    },
+  },
+  {
+    id: 'archive',
+    theme: 'classic',
+    direction: RIGHT,
+    levels: ['folder', 'folder', 'tag'],
+    content: {
+      en: [
+        'Knowledge base',
+        [
+          ['Work', [['Contracts'], ['Reports']]],
+          ['Study', [['Course notes'], ['Papers']]],
+          ['Life', [['Documents'], ['Bills']]],
+        ],
+      ],
+      'zh-CN': [
+        '资料库',
+        [
+          ['工作', [['合同'], ['报告']]],
+          ['学习', [['课程笔记'], ['论文']]],
+          ['生活', [['证件'], ['账单']]],
+        ],
+      ],
+    },
+  },
+  {
+    id: 'process',
+    theme: 'bunny',
+    direction: RIGHT,
+    levels: ['chamfer', 'chamfer'],
+    content: {
+      en: [
+        'Expense claim',
+        [
+          ['① Submit', [['Fill in the form'], ['Attach receipts']]],
+          ['② Manager review', [['Approved?', [['Yes → payment'], ['No → revise and resubmit']], 'diamond']]],
+          ['③ Payment'],
+          ['④ Archive'],
+        ],
+      ],
+      'zh-CN': [
+        '报销流程',
+        [
+          ['① 提交申请', [['填写报销单'], ['附上发票']]],
+          ['② 主管审批', [['是否通过？', [['通过 → 进入打款'], ['退回 → 修改后重新提交']], 'diamond']]],
+          ['③ 财务打款'],
+          ['④ 归档备查'],
+        ],
+      ],
+    },
+  },
 ]
 
-function build([topic, children]: Outline): MapNode {
-  return createNode(topic, children?.map(build))
+function build([topic, children, shape]: Outline, depth: number, levels: MapTemplate['levels']): MapNode {
+  const node = createNode(topic, children?.map((child) => build(child, depth + 1, levels)))
+  const levelShape = shape ?? levels?.[depth]
+  if (levelShape) node.shape = levelShape
+  return node
 }
 
 /** Creates a fresh map (new ids) from a template in the given language. */
 export function createMapFromTemplate(template: MapTemplate, language: Language): MindMap {
-  const map: MindMap = { nodeData: build(template.content[language]), direction: template.direction }
+  const map: MindMap = { nodeData: build(template.content[language], 0, template.levels), direction: template.direction }
   const theme = template.theme ? findPreset(template.theme) : undefined
   if (theme) map.theme = structuredClone(theme)
   return map
+}
+
+/**
+ * Gives a map (e.g. built from the user's pasted outline) a template's look:
+ * its color scheme, layout and topic shapes by depth. Topics that already
+ * have a shape keep it.
+ */
+export function applyTemplateLook(map: MindMap, template: MapTemplate): MindMap {
+  const result = structuredClone(map)
+  result.direction = template.direction
+  const theme = template.theme ? findPreset(template.theme) : undefined
+  if (theme) result.theme = structuredClone(theme)
+  else delete result.theme
+  const stack: Array<{ node: MapNode; depth: number }> = [{ node: result.nodeData, depth: 0 }]
+  while (stack.length) {
+    const { node, depth } = stack.pop()!
+    const shape = template.levels?.[depth]
+    if (shape && !node.shape) node.shape = shape
+    for (const child of node.children ?? []) stack.push({ node: child, depth: depth + 1 })
+  }
+  return result
+}
+
+/** The template's structure as a Markdown outline (for AI prompts or copying). */
+export function templateOutline(template: MapTemplate, language: Language): string {
+  return exportMarkdown(createMapFromTemplate(template, language))
+}
+
+/** Shapes a template uses, in order of depth, without repeats. */
+export function templateShapes(template: MapTemplate): NodeShape[] {
+  const found = new Set<NodeShape>()
+  const walk = ([, children, shape]: Outline, depth: number) => {
+    const s = shape ?? template.levels?.[depth]
+    if (s) found.add(s)
+    children?.forEach((child) => walk(child, depth + 1))
+  }
+  walk(template.content.en, 0)
+  return [...found]
 }

@@ -264,6 +264,7 @@ test('templates, color schemes and topic styles are saved in the file', async ({
   await page.getByRole('navigation').getByRole('button', { name: 'New', exact: true }).click()
   await page.getByRole('menuitem', { name: 'From template…' }).click()
   await page.getByTestId('template-project').click()
+  await page.getByRole('button', { name: 'Use the sample content' }).click()
   await expect(page.locator('me-root me-tpc')).toHaveText('Project plan')
   await expect(page.getByRole('button', { name: /^Project plan/ })).toBeVisible()
 
@@ -625,4 +626,94 @@ test('HTML export opens on its own, works offline, and imports back', async ({ p
   await (await chooserPromise).setFiles({ name: 'shared.html', mimeType: 'text/html', buffer: Buffer.from(html) })
   await expect(page.getByRole('button', { name: /^shared/ })).toBeVisible()
   await expect(page.locator('me-tpc').filter({ hasText: /^Leaf 叶子$/ })).toBeVisible()
+})
+
+test.describe('extra topic shapes', () => {
+  test('More… shapes are applied, drawn, saved and undoable', async ({ page }) => {
+    await useFakeFileSystem(page)
+    await openApp(page)
+    await addChildToRoot(page, 'Decide')
+    const topic = page.locator('me-tpc').filter({ hasText: /^Decide$/ })
+    await topic.click()
+    await page.getByRole('button', { name: 'Style' }).click()
+    const panel = page.getByRole('complementary', { name: 'Style' })
+    await panel.getByRole('radio', { name: 'More…' }).click()
+    const grid = panel.getByRole('radiogroup', { name: 'More shapes' })
+    await expect(grid.getByRole('radio')).toHaveCount(13)
+
+    await grid.getByRole('radio', { name: 'Diamond' }).click()
+    await expect(topic).toHaveAttribute('data-shape', 'diamond')
+    await expect(topic.locator('svg.wen2tu-shape path')).toHaveAttribute('d', /^M /)
+    await expect(grid.getByRole('radio', { name: 'Diamond' })).toHaveAttribute('aria-checked', 'true')
+
+    // Switching to a CSS shape removes the SVG outline.
+    await grid.getByRole('radio', { name: 'Ellipse' }).click()
+    await expect(topic).toHaveAttribute('data-shape', 'ellipse')
+    await expect(topic.locator('svg.wen2tu-shape')).toHaveCount(0)
+
+    await page.keyboard.press('ControlOrMeta+s')
+    await expect(page.getByTestId('save-status')).toHaveText(/^Saved to/)
+    const saved = JSON.parse(await page.evaluate(() => Object.values(window.__fs.files)[0]))
+    expect(saved.map.nodeData.children[0].shape).toBe('ellipse')
+
+    // A corner style replaces the extra shape; undo brings it back.
+    await panel.getByRole('radio', { name: 'Rounded' }).click()
+    await expect(topic).not.toHaveAttribute('data-shape', /.+/)
+    await page.getByRole('button', { name: 'Undo' }).click()
+    await expect(page.locator('me-tpc').filter({ hasText: /^Decide$/ })).toHaveAttribute('data-shape', 'ellipse')
+  })
+
+  test('shapes come along in exported SVG', async ({ page }) => {
+    await openApp(page)
+    await addChildToRoot(page, 'Cloudy')
+    await page.locator('me-tpc').filter({ hasText: /^Cloudy$/ }).click()
+    await page.getByRole('button', { name: 'Style' }).click()
+    const panel = page.getByRole('complementary', { name: 'Style' })
+    await panel.getByRole('radio', { name: 'More…' }).click()
+    await panel.getByRole('radio', { name: 'Cloud' }).click()
+    await page.getByRole('button', { name: 'Export' }).click()
+    const downloadPromise = page.waitForEvent('download')
+    await page.getByRole('menuitem', { name: 'SVG image' }).click()
+    const svg = await readFile(await (await downloadPromise).path(), 'utf8')
+    expect(svg).toContain('wen2tu-shape')
+    expect(svg).toContain('Cloudy')
+  })
+})
+
+test.describe('templates', () => {
+  test('pour your own outline into a template', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+    await openApp(page)
+    await page.getByRole('navigation').getByRole('button', { name: 'New', exact: true }).click()
+    await page.getByRole('menuitem', { name: 'From template…' }).click()
+    await page.getByTestId('template-trip').click()
+    const dialog = page.getByRole('dialog', { name: 'Trip plan' })
+    await expect(dialog.getByRole('list', { name: 'Shapes in this template' })).toContainText('Ticket')
+
+    await dialog.getByRole('button', { name: 'Copy AI prompt' }).click()
+    const prompt = await page.evaluate(() => navigator.clipboard.readText())
+    expect(prompt).toContain('# Tokyo in 5 days')
+    expect(prompt).toContain('My content:')
+
+    await expect(dialog.getByRole('button', { name: 'Create with this template' })).toBeDisabled()
+    await dialog.getByRole('textbox').fill('```markdown\n# Paris weekend\n## Day 1\n- Louvre\n## Packing\n- Umbrella\n```')
+    await dialog.getByRole('button', { name: 'Create with this template' }).click()
+    await expect(dialog).toBeHidden()
+
+    await expect(page.locator('me-root me-tpc')).toHaveText('Paris weekend')
+    await expect(page.locator('me-root me-tpc')).toHaveAttribute('data-shape', 'ticket')
+    await expect(page.locator('me-tpc').filter({ hasText: /^Day 1$/ })).toHaveAttribute('data-shape', 'flag')
+    await expect(page.locator('me-tpc').filter({ hasText: /^Louvre$/ })).toHaveAttribute('data-shape', 'tag')
+    await expect(page.getByRole('button', { name: /^Paris weekend/ })).toBeVisible()
+  })
+
+  test('copy the current map as Markdown', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+    await openApp(page)
+    await addChildToRoot(page, 'Point A')
+    await page.getByRole('button', { name: 'Export' }).click()
+    await page.getByRole('menuitem', { name: 'Copy as Markdown' }).click()
+    await expect(page.getByTestId('notice-copied-markdown')).toBeVisible()
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('# Central topic\n\n- Point A\n')
+  })
 })

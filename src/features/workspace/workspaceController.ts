@@ -58,6 +58,7 @@ export type Notice =
   | { id: string; kind: 'downloaded'; fileName: string }
   | { id: string; kind: 'imported'; fileName: string }
   | { id: string; kind: 'storage-unavailable' }
+  | { id: string; kind: 'copied-markdown' }
   | { id: string; kind: 'error'; message: MessageRef }
 
 type NoticeInput = Notice extends infer N ? (N extends Notice ? Omit<N, 'id'> : never) : never
@@ -540,15 +541,16 @@ export class WorkspaceController {
   }
 
   /**
-   * Creates a new map from pasted text (Markdown or an indented outline).
-   * Returns false, with an error notice, if nothing usable was found.
+   * Creates a new map from pasted text (Markdown or an indented outline),
+   * optionally restyled by `transform` (e.g. a template's look). Returns
+   * false, with an error notice, if nothing usable was found.
    */
-  async importText(text: string): Promise<boolean> {
+  async importText(text: string, transform?: (map: MindMap) => MindMap): Promise<boolean> {
     this.flush()
     try {
       const { outlineToMap } = await import('../import-export/outlineText')
       const { map, title } = await outlineToMap(text, this.texts().untitled)
-      this.newDoc(map, title)
+      this.newDoc(transform ? transform(map) : map, title)
       return true
     } catch (error) {
       this.showError(error)
@@ -863,6 +865,19 @@ export class WorkspaceController {
         homepage: REPO_URL,
       })
       downloadText(html, `${fileNameForTitle(doc.title).replace(/\.mind\.json$/, '')}.html`, 'text/html')
+    } catch (error) {
+      this.showError(error)
+    }
+  }
+
+  /** Copies the map to the clipboard as a Markdown outline (e.g. to hand to an AI). */
+  async copyMarkdown() {
+    const doc = this.activeDoc()
+    if (!doc) return
+    this.flush()
+    try {
+      await navigator.clipboard.writeText(exportMarkdown(parseDocument(doc.workingText).map))
+      this.addNotice({ kind: 'copied-markdown' })
     } catch (error) {
       this.showError(error)
     }

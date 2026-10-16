@@ -30,7 +30,8 @@
     "welcome": "Welcome map",
     "newFromText": "From pasted text…",
     "exportHtml": "HTML (interactive)",
-    "exportHtmlHint": "One file that opens in any browser: zoom, fold branches, click links. Can be imported back."
+    "exportHtmlHint": "One file that opens in any browser: zoom, fold branches, click links. Can be imported back.",
+    "copyMarkdown": "Copy as Markdown"
   },
   "sidebar": {
     "title": "Maps",
@@ -63,7 +64,8 @@
     "externalKeep": "Keep my version",
     "downloaded": "Downloaded {{file}}. This browser can't overwrite the original file, so each save downloads a new copy.",
     "imported": "Imported {{file}} as a new map. Save it to create a .mind.json file.",
-    "storageUnavailable": "Browser storage is unavailable (private mode?). Edits won't survive a reload — save to a file."
+    "storageUnavailable": "Browser storage is unavailable (private mode?). Edits won't survive a reload — save to a file.",
+    "copiedMarkdown": "Copied the map as a Markdown outline."
   },
   "dialogs": {
     "cancel": "Cancel",
@@ -190,7 +192,9 @@
       "mainFill": "Main topic fill",
       "mainText": "Main topic text & outline",
       "text": "Subtopic text"
-    }
+    },
+    "more": "More…",
+    "moreShapes": "More shapes"
   },
   "themes": {
     "bunny": "wen2tu",
@@ -216,35 +220,61 @@
     },
     "project": {
       "name": "Project plan",
-      "description": "Goals, scope, timeline, team and risks."
+      "description": "Goals, scope, timeline, team and risks — each workstream on a title card."
     },
     "meeting": {
       "name": "Meeting notes",
-      "description": "Agenda, decisions and action items."
+      "description": "Agenda, decisions and action items as sticky notes on a framed topic."
     },
     "swot": {
       "name": "SWOT analysis",
-      "description": "Strengths, weaknesses, opportunities, threats."
+      "description": "Strengths, weaknesses, opportunities, threats in hexagons."
     },
     "reading": {
       "name": "Reading notes",
-      "description": "Key ideas, quotes and takeaways from a book."
+      "description": "Key ideas, quotes and takeaways, with leaves on a forest palette."
     },
     "weekly": {
       "name": "Weekly plan",
-      "description": "Work, study, health and a weekly review."
+      "description": "Work, study, health and review, one sticky note each."
     },
     "brainstorm": {
       "name": "Brainstorm",
-      "description": "Explore a problem and collect ideas."
+      "description": "An ellipse at the center and ideas in clouds."
     },
     "decision": {
       "name": "Decision",
-      "description": "Compare options against criteria."
+      "description": "A diamond for the decision, flags for each option."
     },
     "org": {
       "name": "Org chart",
-      "description": "A top-down tree for teams and hierarchies."
+      "description": "A top-down tree of teams on title cards."
+    },
+    "intro": "Pick a template to use its sample, or to pour your own outline (e.g. from an AI) into its colors, layout and shapes.",
+    "back": "All templates",
+    "apply": "Create with this template",
+    "useSample": "Use the sample content",
+    "shapesUsed": "Shapes in this template",
+    "ownContent": "Use it with your own content",
+    "step1": "Copy the AI prompt and send it to any AI together with your notes.",
+    "step2": "Copy the Markdown outline the AI replies with and paste it below.",
+    "step3": "Create — the map gets this template’s colors, layout and shapes.",
+    "copyPrompt": "Copy AI prompt",
+    "copyOutline": "Copy template outline",
+    "copiedOutline": "Outline copied",
+    "pastePlaceholder": "Paste the AI’s Markdown here…",
+    "prompt": "Organize the content below into a mind map outline that follows this template’s structure (same levels; add or remove branches as the content needs). Reply with Markdown only, in one code block: the central topic as a level-1 heading (# ), main branches as level-2 headings (## ), details as bullet lists (- ) indented two spaces per level. Keep items short.\n\nTemplate:\n```markdown\n{{outline}}```\n\nMy content:\n",
+    "trip": {
+      "name": "Trip plan",
+      "description": "A ticket for the trip, flags for each part, tags for the packing list."
+    },
+    "archive": {
+      "name": "Knowledge base",
+      "description": "Folders for categories, tags for the documents inside."
+    },
+    "process": {
+      "name": "Process",
+      "description": "Steps in cut-corner boxes, a diamond for each yes/no check."
     }
   },
   "paste": {
@@ -259,5 +289,20 @@
     "menuItem": "Paste outline",
     "insertTitle": "Paste an outline under the selected topic",
     "insertCreate": "Add as subtopics"
+  },
+  "shapes": {
+    "card": "Title card",
+    "diamond": "Diamond",
+    "flag": "Flag",
+    "hexagon": "Hexagon",
+    "chamfer": "Cut corners",
+    "note": "Sticky note",
+    "ellipse": "Ellipse",
+    "cloud": "Cloud",
+    "leaf": "Leaf",
+    "ticket": "Ticket",
+    "folder": "Folder tab",
+    "double": "Double border",
+    "tag": "Tag"
   }
 }

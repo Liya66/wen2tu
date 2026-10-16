@@ -30,7 +30,8 @@
     "welcome": "欢迎导图",
     "newFromText": "粘贴文字生成…",
     "exportHtml": "HTML（可交互）",
-    "exportHtmlHint": "单个文件，任何浏览器都能打开：可缩放、折叠分支、点击链接，也能再导入文兔兔。"
+    "exportHtmlHint": "单个文件，任何浏览器都能打开：可缩放、折叠分支、点击链接，也能再导入文兔兔。",
+    "copyMarkdown": "复制为 Markdown"
   },
   "sidebar": {
     "title": "脑图",
@@ -63,7 +64,8 @@
     "externalKeep": "保留我的版本",
     "downloaded": "已下载 {{file}}。此浏览器无法覆盖原文件，每次保存都会下载一份新副本。",
     "imported": "已将 {{file}} 导入为新脑图。保存后会生成 .mind.json 文件。",
-    "storageUnavailable": "浏览器存储不可用（可能处于隐私模式）。刷新后修改会丢失，请保存到文件。"
+    "storageUnavailable": "浏览器存储不可用（可能处于隐私模式）。刷新后修改会丢失，请保存到文件。",
+    "copiedMarkdown": "已把导图复制为 Markdown 大纲。"
   },
   "dialogs": {
     "cancel": "取消",
@@ -190,7 +192,9 @@
       "mainFill": "主分支填充",
       "mainText": "主分支文字和边框",
       "text": "子主题文字"
-    }
+    },
+    "more": "更多…",
+    "moreShapes": "更多形状"
   },
   "themes": {
     "bunny": "文兔兔",
@@ -216,35 +220,61 @@
     },
     "project": {
       "name": "项目计划",
-      "description": "目标、范围、时间线、团队和风险。"
+      "description": "目标、范围、时间线、团队和风险——每条工作线一张标题栏卡片。"
     },
     "meeting": {
       "name": "会议记录",
-      "description": "议程、决定事项和待办。"
+      "description": "议程、决定事项和待办，用便签贴在双层边框的主题旁。"
     },
     "swot": {
       "name": "SWOT 分析",
-      "description": "优势、劣势、机会、威胁。"
+      "description": "优势、劣势、机会、威胁，用扁六边形区分。"
     },
     "reading": {
       "name": "读书笔记",
-      "description": "核心观点、摘抄与收获。"
+      "description": "核心观点、摘抄与收获，叶片配森林配色。"
     },
     "weekly": {
       "name": "周计划",
-      "description": "工作、学习、健康与每周复盘。"
+      "description": "工作、学习、健康与复盘，每项一张便签。"
     },
     "brainstorm": {
       "name": "头脑风暴",
-      "description": "拆解问题，收集想法。"
+      "description": "中心用椭圆，想法放进一朵朵云里。"
     },
     "decision": {
       "name": "决策分析",
-      "description": "按标准比较不同方案。"
+      "description": "菱形表示要做的决定，旗标表示各个方案。"
     },
     "org": {
       "name": "组织架构",
-      "description": "自上而下的团队层级树。"
+      "description": "自上而下的团队层级，每个团队一张标题栏卡片。"
+    },
+    "intro": "选择一个模板：可以直接用示例内容，也可以把你自己的大纲（比如 AI 的回复）套进它的配色、布局和形状。",
+    "back": "全部模板",
+    "apply": "按此模板生成",
+    "useSample": "用示例内容新建",
+    "shapesUsed": "模板中的形状",
+    "ownContent": "套用我的内容",
+    "step1": "复制 AI 提示词，连同你的材料发给任意 AI。",
+    "step2": "复制 AI 回复的 Markdown 大纲，粘贴到下面。",
+    "step3": "点击生成——导图会使用这个模板的配色、布局和形状。",
+    "copyPrompt": "复制 AI 提示词",
+    "copyOutline": "复制模板大纲",
+    "copiedOutline": "已复制大纲",
+    "pastePlaceholder": "把 AI 回复的 Markdown 粘贴到这里…",
+    "prompt": "请参照下面这个思维导图模板的结构，把我提供的内容整理成大纲（保持相同的层级，可根据内容增删分支）。只用 Markdown 输出，并放在一个代码块中：一级标题（# ）写中心主题，二级标题（## ）写主要分支，列表（- ）写下级要点，每深一层多缩进两个空格。每个节点只写关键词或短句。\n\n模板结构：\n```markdown\n{{outline}}```\n\n我的内容：\n",
+    "trip": {
+      "name": "旅行计划",
+      "description": "票券写行程主题，旗标分模块，吊牌列打包清单。"
+    },
+    "archive": {
+      "name": "资料归档",
+      "description": "文件夹表示分类，吊牌标出里面的资料。"
+    },
+    "process": {
+      "name": "流程梳理",
+      "description": "切角矩形写步骤，菱形写“是否通过”这类判断。"
     }
   },
   "paste": {
@@ -259,5 +289,20 @@
     "menuItem": "粘贴大纲",
     "insertTitle": "粘贴大纲到选中节点",
     "insertCreate": "添加为下级节点"
+  },
+  "shapes": {
+    "card": "标题栏卡片",
+    "diamond": "菱形",
+    "flag": "旗标",
+    "hexagon": "扁六边形",
+    "chamfer": "切角矩形",
+    "note": "便签",
+    "ellipse": "椭圆",
+    "cloud": "云朵",
+    "leaf": "叶片",
+    "ticket": "票券",
+    "folder": "文件夹",
+    "double": "双层边框",
+    "tag": "吊牌"
   }
 }

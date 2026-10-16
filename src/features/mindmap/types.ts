@@ -10,6 +10,24 @@ export const NATIVE_EXTENSION = '.mind.json'
 
 export type Direction = 0 | 1 | 2 | 3
 
+/** Extra topic shapes (beyond the corner styles set through `style.borderRadius`). */
+export const NODE_SHAPES = [
+  'card',
+  'diamond',
+  'flag',
+  'hexagon',
+  'chamfer',
+  'note',
+  'ellipse',
+  'cloud',
+  'leaf',
+  'ticket',
+  'folder',
+  'double',
+  'tag',
+] as const
+export type NodeShape = (typeof NODE_SHAPES)[number]
+
 export interface MapNode {
   id: string
   topic: string
@@ -23,6 +41,8 @@ export interface MapNode {
   hyperLink?: string
   note?: string
   branchColor?: string
+  /** One of NODE_SHAPES; omitted for the regular box. */
+  shape?: NodeShape
   image?: {
     url: string
     width: number

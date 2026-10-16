@@ -3,6 +3,7 @@ import { createId } from '../../utils/id'
 import { DocumentError } from './errors'
 import { safeCssValue, safeImageUrl, safeLinkUrl } from './sanitize'
 import {
+  NODE_SHAPES,
   NODE_STYLE_KEYS,
   THEME_VARS,
   type MapArrow,
@@ -39,6 +40,8 @@ const nodeFieldsSchema = z.object({
   hyperLink: z.string().optional(),
   note: z.string().optional(),
   branchColor: z.string().optional(),
+  // An unknown shape (e.g. from a newer version) falls back to the regular box.
+  shape: z.enum(NODE_SHAPES).optional().catch(undefined),
   image: z
     .object({
       url: z.string(),
@@ -183,6 +186,7 @@ export function sanitizeNodeTree(input: unknown): MapNode {
     if (fields.note) node.note = fields.note
     const branchColor = cleanColor(fields.branchColor)
     if (branchColor) node.branchColor = branchColor
+    if (fields.shape) node.shape = fields.shape
     if (fields.image) {
       const url = safeImageUrl(fields.image.url)
       if (url) node.image = { ...fields.image, url }

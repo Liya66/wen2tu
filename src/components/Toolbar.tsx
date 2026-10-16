@@ -171,6 +171,7 @@ export function Toolbar({
               onSelect: () => void controller.exportHtml(),
             },
             { label: t('toolbar.exportMarkdown'), onSelect: () => controller.exportMarkdown() },
+            { label: t('toolbar.copyMarkdown'), onSelect: () => void controller.copyMarkdown() },
           ]}
         />
         <span className="tool-separator" aria-hidden="true" />

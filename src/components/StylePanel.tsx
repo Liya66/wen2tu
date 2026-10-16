@@ -13,10 +13,11 @@ import {
 } from '../features/appearance/nodeStyles'
 import { tint } from '../features/appearance/branchPath'
 import { CUSTOM_COLOR_VARS, THEME_PRESETS, customizeTheme, withPalette } from '../features/appearance/themes'
-import type { Direction, MapTheme } from '../features/mindmap/types'
+import { NODE_SHAPES, type Direction, type MapTheme } from '../features/mindmap/types'
 import { ColorField } from './ColorField'
 import type { EditorApi, MapShape, SelectedNode } from './MindMapCanvas'
 import { Segmented } from './Segmented'
+import { ShapeIcon } from './ShapeIcon'
 
 interface Props {
   editor: EditorApi | null
@@ -85,6 +86,7 @@ export function StylePanel({ editor, selection, onClose }: Props) {
 
 function NodeTab({ editor, selection }: { editor: EditorApi; selection: SelectedNode[] }) {
   const { t } = useTranslation()
+  const [showMore, setShowMore] = useState(false)
   if (!selection.length) return <p className="panel-hint">{t('style.noSelection')}</p>
 
   const look = readLook(selection[0].style)
@@ -109,6 +111,7 @@ function NodeTab({ editor, selection }: { editor: EditorApi; selection: Selected
   const apply = (changes: Partial<NodeLook>) => editor.applyNodeStyle(patchFor(changes))
   const preview = (changes: Partial<NodeLook>) => editor.previewNodeStyle(patchFor(changes))
   const hasBranch = selection.some((node) => node.depth > 0)
+  const extraShape = selection[0].shape
   const lined = look.border === 'full' || look.border === 'underline'
 
   return (
@@ -118,15 +121,39 @@ function NodeTab({ editor, selection }: { editor: EditorApi; selection: Selected
       <section className="panel-section">
         <Segmented
           label={t('style.shape')}
-          value={look.shape ?? 'default'}
+          value={extraShape || showMore ? 'more' : (look.shape ?? 'default')}
           options={[
             { value: 'default', label: t('style.default') },
             { value: 'square', label: t('style.square') },
             { value: 'rounded', label: t('style.rounded') },
             { value: 'pill', label: t('style.pill') },
+            { value: 'more', label: t('style.more') },
           ]}
-          onChange={(shape) => apply({ shape: shape === 'default' ? undefined : shape })}
+          onChange={(shape) => {
+            if (shape === 'more') return setShowMore(true)
+            setShowMore(false)
+            // A corner style replaces any extra shape, in one undo step.
+            editor.applyNodeStyle(patchFor({ shape: shape === 'default' ? undefined : shape }), { shape: null })
+          }}
         />
+        {(showMore || extraShape) && (
+          <div className="shape-grid" role="radiogroup" aria-label={t('style.moreShapes')}>
+            {NODE_SHAPES.map((shape) => (
+              <button
+                key={shape}
+                type="button"
+                role="radio"
+                aria-checked={extraShape === shape}
+                className="shape-option"
+                onClick={() => editor.applyNodeStyle(patchFor({}), { shape })}
+                title={t(`shapes.${shape}`)}
+              >
+                <ShapeIcon shape={shape} />
+                <span>{t(`shapes.${shape}`)}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="panel-section">
@@ -259,7 +286,7 @@ function NodeTab({ editor, selection }: { editor: EditorApi; selection: Selected
       )}
 
       <button type="button" className="button panel-reset" onClick={() => {
-        editor.applyNodeStyle(() => CLEAR_STYLE)
+        editor.applyNodeStyle(() => CLEAR_STYLE, { shape: null })
         if (hasBranch) editor.setBranchColor(undefined)
       }}>
         {t('style.resetNode')}

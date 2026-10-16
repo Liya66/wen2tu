@@ -12,3 +12,147 @@
   border: 2px solid var(--wen2tu-branch, var(--main-color));
   padding: 4px 10px;
 }
+
+/* ---- Extra topic shapes (data-shape, set by mapRendering.ts) ----
+   Colors come from --wen2tu-shape-*: the topic's own border and fill, or its
+   branch color by default. Padding is !important so a topic's inline padding
+   can't squeeze its text out of the shape. */
+
+.canvas .map-container me-tpc[data-shape] {
+  position: relative;
+  isolation: isolate;
+}
+
+/* CSS-drawn shapes keep the topic's own border and fill; these are defaults. */
+.canvas .map-container me-children me-tpc:is(
+    [data-shape='ellipse'],
+    [data-shape='leaf'],
+    [data-shape='double'],
+    [data-shape='card'],
+    [data-shape='note']
+  ) {
+  border: 2px solid var(--wen2tu-shape-stroke);
+  background-color: var(--wen2tu-shape-fill);
+}
+
+.canvas .map-container me-tpc[data-shape='ellipse'] {
+  border-radius: 50% !important;
+  padding: 10px 24px !important;
+}
+
+.canvas .map-container me-tpc[data-shape='leaf'] {
+  /* Pointed top-left and bottom-right, rounded on the other two corners. */
+  border-radius: 2px 60% / 2px 100% !important;
+  padding: 7px 22px !important;
+}
+
+.canvas .map-container .lhs me-tpc[data-shape='leaf'] {
+  border-radius: 60% 2px / 100% 2px !important;
+}
+
+.canvas .map-container me-tpc[data-shape='double'] {
+  margin: 4px;
+  border-radius: 6px !important;
+  padding: 6px 14px !important;
+  box-shadow:
+    0 0 0 2px var(--bgcolor),
+    0 0 0 4px var(--wen2tu-shape-stroke);
+}
+
+.canvas .map-container me-tpc[data-shape='card'] {
+  border-radius: 6px !important;
+  padding: 13px 14px 6px !important;
+  box-shadow: inset 0 6px 0 var(--wen2tu-shape-stroke);
+}
+
+/* Sticky note: a soft shadow and a barely-there folded corner. */
+.canvas .map-container me-tpc[data-shape='note'] {
+  border-radius: 2px !important;
+  padding: 8px 18px 8px 14px !important;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 8%);
+}
+
+.canvas .map-container me-tpc[data-shape='note']::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 11px;
+  height: 11px;
+  background: linear-gradient(225deg, var(--bgcolor) 50%, rgb(0 0 0 / 6%) 50%);
+  pointer-events: none;
+}
+
+/* Outline shapes: drawn by an SVG behind the text instead of border/background. */
+.canvas .map-container me-tpc:is(
+    [data-shape='diamond'],
+    [data-shape='hexagon'],
+    [data-shape='chamfer'],
+    [data-shape='flag'],
+    [data-shape='tag'],
+    [data-shape='ticket'],
+    [data-shape='folder'],
+    [data-shape='cloud']
+  ) {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.canvas .map-container me-tpc > svg.wen2tu-shape {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: var(--wen2tu-shape-fill);
+  fill-rule: evenodd;
+  stroke: var(--wen2tu-shape-stroke);
+  stroke-width: var(--wen2tu-shape-width, 2);
+  stroke-dasharray: var(--wen2tu-shape-dash, none);
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.canvas .map-container me-tpc[data-shape='diamond'] {
+  padding: 16px 34px !important;
+}
+
+.canvas .map-container me-tpc[data-shape='hexagon'] {
+  padding: 8px 26px !important;
+}
+
+.canvas .map-container me-tpc[data-shape='chamfer'] {
+  padding: 7px 18px !important;
+}
+
+.canvas .map-container me-tpc[data-shape='flag'] {
+  padding: 7px 28px 7px 16px !important;
+}
+
+.canvas .map-container .lhs me-tpc[data-shape='flag'] {
+  padding: 7px 16px 7px 28px !important;
+}
+
+.canvas .map-container me-tpc[data-shape='tag'] {
+  padding: 7px 16px 7px 26px !important;
+}
+
+.canvas .map-container .lhs me-tpc[data-shape='tag'] {
+  padding: 7px 26px 7px 16px !important;
+}
+
+.canvas .map-container me-tpc[data-shape='ticket'] {
+  padding: 7px 22px !important;
+}
+
+.canvas .map-container me-tpc[data-shape='folder'] {
+  padding: 13px 16px 7px !important;
+}
+
+.canvas .map-container me-tpc[data-shape='cloud'] {
+  padding: 16px 26px !important;
+}
