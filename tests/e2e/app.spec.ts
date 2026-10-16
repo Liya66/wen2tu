@@ -45,7 +45,7 @@ test('edits survive a reload without any saving', async ({ page }) => {
   expect(errors).toEqual([])
 })
 
-test('switches language without touching map content, and remembers it', async ({ page }) => {
+test('switches language without touching map content, and keeps it in the address', async ({ page }) => {
   await openApp(page)
   await addChildToRoot(page, 'Hello 你好')
 
@@ -58,8 +58,25 @@ test('switches language without touching map content, and remembers it', async (
   // The engine's context menu follows the language too.
   await expect(page.locator('#cm-add_child span').first()).toHaveText('插入子节点')
 
+  // Each language has its own address, so a reload keeps the choice.
+  expect(new URL(page.url()).pathname).toBe('/')
   await page.waitForTimeout(600)
   await page.reload()
+  await expect(page.getByRole('combobox', { name: '语言' })).toHaveValue('zh-CN')
+  await page.getByRole('combobox', { name: '语言' }).selectOption('en')
+  expect(new URL(page.url()).pathname).toBe('/en/')
+  await page.reload()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+  await expect(page.locator('me-tpc', { hasText: 'Hello 你好' })).toBeVisible()
+})
+
+test('/en/ opens in English, / in Chinese', async ({ page }) => {
+  await page.goto('/en')
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+  await expect(page).toHaveTitle('wen2tu · mind maps')
+  await expect(page.locator('me-root me-tpc')).toHaveText('Welcome to wen2tu')
+  await page.goto('/')
+  await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN')
   await expect(page.getByRole('combobox', { name: '语言' })).toHaveValue('zh-CN')
 })
 

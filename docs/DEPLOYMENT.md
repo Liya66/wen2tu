@@ -45,7 +45,7 @@ If you do not want analytics, leave it disabled. 如果不需要统计，保持�
 ## 4. Check the deployment · 部署后检查
 
 - The page loads over HTTPS and the browser console shows no errors (including CSP violations).
-- Switch the language, reload: the choice is kept.
+- `/en/` opens in English and `/` in Chinese; switching the language changes the address.
 - Create a map, reload: the content is restored.
 - In Chrome/Edge: Save writes a `.mind.json` file; Open reads it back.
 - In Firefox/Safari: Save downloads a copy and the notice explains it.
@@ -57,4 +57,4 @@ Pages project → **Custom domains** → **Set up a domain**. No app changes are
 
 ## Routing
 
-The app is a single page with no client-side routes, so no SPA fallback configuration is needed. Do not add a top-level `404.html` to `public/`; it would change Cloudflare Pages' default handling.
+The app has two static pages and no client-side routes: `/` (Chinese) and `/en/` (English), built from `index.html` and `en/index.html`. Both share the same browser storage, so maps are the same in either language. No SPA fallback configuration is needed. Do not add a top-level `404.html` to `public/`; it would change Cloudflare Pages' default handling.

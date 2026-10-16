@@ -6,27 +6,25 @@ import zhCN from './locales/zh-CN.json'
 export const LANGUAGES = ['en', 'zh-CN'] as const
 export type Language = (typeof LANGUAGES)[number]
 
-const STORAGE_KEY = 'wen2tu.language'
+/** Each language has its own address: / is Chinese, /en/ is English. */
+const PATHS: Record<Language, string> = { 'zh-CN': '/', en: '/en/' }
 
-function readStoredLanguage(): Language | null {
-  try {
-    const value = localStorage.getItem(STORAGE_KEY)
-    return LANGUAGES.includes(value as Language) ? (value as Language) : null
-  } catch {
-    return null
-  }
+/** The language of a page address (Chinese unless it is under /en/). */
+export function detectLanguage(pathname: string = currentPath()): Language {
+  return /^\/en(\/|$)/.test(pathname) ? 'en' : 'zh-CN'
 }
 
-/** The saved choice, otherwise Chinese (the app's primary audience). */
-export function detectLanguage(stored: Language | null = readStoredLanguage()): Language {
-  return stored ?? 'zh-CN'
+function currentPath(): string {
+  return typeof location === 'undefined' ? '/' : location.pathname
 }
 
+/**
+ * Switches the interface language and moves to that language's address
+ * without reloading, so a reload or a shared link keeps the language.
+ */
 export function setLanguage(language: Language): Promise<unknown> {
-  try {
-    localStorage.setItem(STORAGE_KEY, language)
-  } catch {
-    // Preference just won't persist.
+  if (typeof location !== 'undefined' && detectLanguage() !== language) {
+    history.replaceState(history.state, '', PATHS[language] + location.search + location.hash)
   }
   return i18n.changeLanguage(language)
 }

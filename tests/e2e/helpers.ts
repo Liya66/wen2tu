@@ -15,10 +15,7 @@ export function trackConsoleErrors(page: Page): string[] {
  * true, a blank map is created so tests start from a known state.
  */
 export async function openApp(page: Page, language: 'en' | 'zh-CN' = 'en', { welcome = false } = {}) {
-  await page.addInitScript((lang) => {
-    if (!localStorage.getItem('wen2tu.language')) localStorage.setItem('wen2tu.language', lang)
-  }, language)
-  await page.goto('/')
+  await page.goto(language === 'en' ? '/en/' : '/')
   await expect(page.locator('me-root me-tpc')).toBeVisible()
   await expect(page.getByTestId('save-status')).not.toBeEmpty()
   if (welcome) return

@@ -1,5 +1,6 @@
 /// <reference types="vitest/config" />
 import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
@@ -25,6 +26,13 @@ export default defineConfig({
     // The editor (React + Mind Elixir + schema validation) is ~160 kB gzipped;
     // importers and image export are split out and loaded on demand.
     chunkSizeWarningLimit: 600,
+    // One page per interface language: / is Chinese, /en/ is English.
+    rolldownOptions: {
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        en: fileURLToPath(new URL('./en/index.html', import.meta.url)),
+      },
+    },
   },
   preview: {
     headers: productionHeaders(),

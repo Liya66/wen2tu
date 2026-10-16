@@ -41,22 +41,28 @@ describe('translations', () => {
 })
 
 describe('detectLanguage', () => {
-  it('uses the saved choice, otherwise Chinese', () => {
-    expect(detectLanguage('en')).toBe('en')
-    expect(detectLanguage('zh-CN')).toBe('zh-CN')
-    expect(detectLanguage(null)).toBe('zh-CN')
+  it('reads the language from the address: /en/ is English, the rest Chinese', () => {
+    expect(detectLanguage('/en/')).toBe('en')
+    expect(detectLanguage('/en')).toBe('en')
+    expect(detectLanguage('/en/index.html')).toBe('en')
+    expect(detectLanguage('/')).toBe('zh-CN')
+    expect(detectLanguage('/index.html')).toBe('zh-CN')
+    expect(detectLanguage('/english')).toBe('zh-CN')
   })
 })
 
 describe('LanguageSwitcher', () => {
-  it('switches the interface language and remembers it', async () => {
+  it('switches the interface language and its address', async () => {
+    history.replaceState(null, '', '/en/?x=1#top')
     await act(() => i18n.changeLanguage('en'))
     render(<LanguageSwitcher />)
-    const select = screen.getByRole('combobox', { name: 'Language' })
-    await userEvent.selectOptions(select, 'zh-CN')
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Language' }), 'zh-CN')
     expect(i18n.language).toBe('zh-CN')
-    expect(localStorage.getItem('wen2tu.language')).toBe('zh-CN')
+    expect(location.pathname + location.search + location.hash).toBe('/?x=1#top')
     expect(document.documentElement.lang).toBe('zh-CN')
-    expect(screen.getByRole('combobox', { name: '语言' })).toHaveValue('zh-CN')
+
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: '语言' }), 'en')
+    expect(location.pathname).toBe('/en/')
+    expect(screen.getByRole('combobox', { name: 'Language' })).toHaveValue('en')
   })
 })

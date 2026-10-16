@@ -19,7 +19,7 @@
 - **Make it yours.** 12 color schemes, custom colors, 12 templates (project plan, SWOT, trip plan, process…) and a style panel for topics: 13 shapes (diamond, cloud, sticky note, ticket, tag…), corners, outline or underline borders, fills, text color and size, branch colors — plus branch line strength (including hidden), weight and style (curved, elbow, straight). Pour your own outline (e.g. from an AI) into any template's look.
 - **Bring your outlines.** Paste Markdown or an indented outline (e.g. from an AI chat) — onto a selected topic it becomes subtopics, otherwise a new map. Import Markdown and OPML files; a built-in prompt asks any AI for the right format.
 - **Share the result.** Export PNG, SVG, a Markdown outline, or an interactive HTML file — one file that opens offline in any browser (zoom, fold branches, click links) and can be imported back. Images include the map background, or choose a transparent export (dark schemes switch to a light version for white pages).
-- **Bilingual.** English and Simplified Chinese interface; switching never touches your content.
+- **Bilingual.** Simplified Chinese at `/`, English at `/en/`; switching never touches your content.
 
 ## Browser support
 
