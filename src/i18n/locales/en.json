@@ -194,7 +194,19 @@
       "text": "Subtopic text"
     },
     "more": "More…",
-    "moreShapes": "More shapes"
+    "moreShapes": "More shapes",
+    "lines": "Branch lines",
+    "lineStrength": "Strength",
+    "lineStandard": "Standard",
+    "lineSoft": "Soft",
+    "lineFaint": "Faint",
+    "lineHidden": "Hidden",
+    "lineHiddenHint": "Connectors are hidden; plain subtopics keep their underline. To remove an underline, set that topic’s border to None.",
+    "lineWidth": "Weight",
+    "lineStyle": "Style",
+    "lineCurve": "Curved",
+    "lineElbow": "Elbow",
+    "lineStraight": "Straight"
   },
   "themes": {
     "bunny": "wen2tu",

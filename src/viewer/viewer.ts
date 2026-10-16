@@ -31,7 +31,7 @@ if (data && element) {
     // Topic text is plain text, never HTML.
     markdown: (text) => escapeHtml(text),
   })
-  const rendering = installMapRendering(mind, () => map.shape)
+  const rendering = installMapRendering(mind, { getShape: () => map.shape, getLines: () => map.lines })
   rendering.applyTheme(themeFor(), false)
   // The theme is already applied (with wen2tu's branch drawing); don't let
   // init replace it with the plain one stored in the file.

@@ -10,7 +10,9 @@ describe('topicKind', () => {
   it('classifies styles', () => {
     expect(topicKind(undefined)).toBeNull()
     expect(topicKind({ color: 'red' })).toBeNull()
-    expect(topicKind({ border: 'none', background: 'transparent', borderRadius: '999px' })).toBeNull()
+    // A border set to "none" means: no box and no underline either.
+    expect(topicKind({ border: 'none', background: 'transparent', borderRadius: '999px' })).toBe('box')
+    expect(topicKind({ background: 'transparent', borderRadius: '999px' })).toBeNull()
     expect(topicKind({ border: '2px solid red' })).toBe('box')
     expect(topicKind({ background: '#fff' })).toBe('box')
     expect(topicKind({ border: 'none', borderBottom: '2px solid red' })).toBe('underline')
@@ -85,5 +87,24 @@ describe('mainBranchPath', () => {
     const left = mainBranchPath({ ...root, cT: -100, cL: -50, cW: 80, cH: 30, direction: 'lhs' })
     expect(left).toMatch(/^M 100 30 C /)
     expect(left).toMatch(/ 30 -85$/)
+  })
+})
+
+describe('line options', () => {
+  it('draws straight and elbow connectors', () => {
+    expect(subBranchPath(base, GAP, undefined, undefined, { style: 'straight' })).toMatch(/^M 170 40 L 230 140 H 270$/)
+    const elbow = subBranchPath(base, GAP, undefined, undefined, { style: 'elbow' })
+    expect(elbow).toMatch(/^M 170 40 H /)
+    expect(elbow).toContain(' V ')
+    expect(elbow).toMatch(/ H 230 H 270$/)
+    const main = mainBranchPath({ pT: 0, pL: 100, pW: 200, pH: 60, cT: 200, cL: 400, cW: 80, cH: 30, direction: 'rhs' }, { style: 'elbow' })
+    expect(main).toMatch(/^M 300 30 H /)
+    expect(main).toMatch(/ H 400$/)
+  })
+
+  it('hides connectors but keeps plain topics\' underlines', () => {
+    expect(subBranchPath(base, GAP, undefined, undefined, { hidden: true })).toBe('M 230 140 H 270')
+    expect(subBranchPath(base, GAP, { kind: 'box', top: 106, left: 230, width: 40, height: 28 }, undefined, { hidden: true })).toBe('')
+    expect(mainBranchPath({ pT: 0, pL: 100, pW: 200, pH: 60, cT: 200, cL: 400, cW: 80, cH: 30, direction: 'rhs' }, { hidden: true })).toBe('')
   })
 })

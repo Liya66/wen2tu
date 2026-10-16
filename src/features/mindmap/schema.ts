@@ -3,6 +3,9 @@ import { createId } from '../../utils/id'
 import { DocumentError } from './errors'
 import { safeCssValue, safeImageUrl, safeLinkUrl } from './sanitize'
 import {
+  LINE_STRENGTHS,
+  LINE_STYLES,
+  LINE_WIDTHS,
   NODE_SHAPES,
   NODE_STYLE_KEYS,
   THEME_VARS,
@@ -92,6 +95,14 @@ const mapSchema = z.object({
   compact: z.boolean().optional(),
   theme: z.unknown().optional(),
   shape: z.enum(['square', 'rounded', 'pill']).optional().catch(undefined),
+  lines: z
+    .object({
+      strength: z.enum(LINE_STRENGTHS).optional().catch(undefined),
+      width: z.enum(LINE_WIDTHS).optional().catch(undefined),
+      style: z.enum(LINE_STYLES).optional().catch(undefined),
+    })
+    .optional()
+    .catch(undefined),
 })
 
 const themeSchema = z.object({
@@ -272,5 +283,12 @@ export function sanitizeMap(input: unknown): MindMap {
   const theme = sanitizeTheme(raw.theme)
   if (theme) map.theme = theme
   if (raw.shape) map.shape = raw.shape
+  if (raw.lines) {
+    // Keep only non-default values, so default maps stay unchanged on save.
+    const lines = Object.fromEntries(
+      Object.entries(raw.lines).filter(([, value]) => value && value !== 'standard' && value !== 'curve'),
+    )
+    if (Object.keys(lines).length) map.lines = lines
+  }
   return map
 }

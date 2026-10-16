@@ -13,7 +13,7 @@ import {
 } from '../features/appearance/nodeStyles'
 import { tint } from '../features/appearance/branchPath'
 import { CUSTOM_COLOR_VARS, THEME_PRESETS, customizeTheme, withPalette } from '../features/appearance/themes'
-import { NODE_SHAPES, type Direction, type MapTheme } from '../features/mindmap/types'
+import { NODE_SHAPES, type Direction, type LineSettings, type MapTheme } from '../features/mindmap/types'
 import { ColorField } from './ColorField'
 import type { EditorApi, MapShape, SelectedNode } from './MindMapCanvas'
 import { Segmented } from './Segmented'
@@ -300,6 +300,11 @@ function MapTab({ editor, onChanged }: { editor: EditorApi; onChanged: () => voi
   const saved = editor.getTheme()
   const effective = editor.effectiveTheme()
   const selectedName = saved?.name ?? 'auto'
+  const lines = editor.getLines()
+  const setLines = (changes: LineSettings) => {
+    editor.setLines({ ...lines, ...changes })
+    onChanged()
+  }
   const setTheme = (theme: MapTheme | undefined) => {
     editor.setTheme(theme)
     onChanged()
@@ -398,6 +403,47 @@ function MapTab({ editor, onChanged }: { editor: EditorApi; onChanged: () => voi
             </button>
           ))}
         </div>
+      </section>
+
+      <section className="panel-section" aria-label={t('style.lines')}>
+        <span className="field-label">{t('style.lines')}</span>
+        <Segmented<NonNullable<LineSettings['strength']>>
+          label={t('style.lineStrength')}
+          value={lines.strength ?? 'standard'}
+          options={[
+            { value: 'standard', label: t('style.lineStandard') },
+            { value: 'soft', label: t('style.lineSoft') },
+            { value: 'faint', label: t('style.lineFaint') },
+            { value: 'hidden', label: t('style.lineHidden') },
+          ]}
+          onChange={(strength) => setLines({ strength })}
+        />
+        {lines.strength === 'hidden' ? (
+          <p className="panel-hint">{t('style.lineHiddenHint')}</p>
+        ) : (
+          <>
+            <Segmented<NonNullable<LineSettings['width']>>
+              label={t('style.lineWidth')}
+              value={lines.width ?? 'standard'}
+              options={[
+                { value: 'thin', label: t('style.thin') },
+                { value: 'standard', label: t('style.lineStandard') },
+                { value: 'bold', label: t('style.thick') },
+              ]}
+              onChange={(width) => setLines({ width })}
+            />
+            <Segmented<NonNullable<LineSettings['style']>>
+              label={t('style.lineStyle')}
+              value={lines.style ?? 'curve'}
+              options={[
+                { value: 'curve', label: t('style.lineCurve') },
+                { value: 'elbow', label: t('style.lineElbow') },
+                { value: 'straight', label: t('style.lineStraight') },
+              ]}
+              onChange={(style) => setLines({ style })}
+            />
+          </>
+        )}
       </section>
 
       <section className="panel-section">

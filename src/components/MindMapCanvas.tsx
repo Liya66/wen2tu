@@ -22,7 +22,7 @@ import { sanitizeNodeTree } from '../features/mindmap/schema'
 import { escapeHtml } from '../features/mindmap/sanitize'
 import type { StylePatch } from '../features/appearance/nodeStyles'
 import { lightVariantOf, systemTheme } from '../features/appearance/themes'
-import type { Direction, MapNode, MapTheme, MindMap, NodeShape, ThemeVar } from '../features/mindmap/types'
+import type { Direction, LineSettings, MapNode, MapTheme, MindMap, NodeShape, ThemeVar } from '../features/mindmap/types'
 import type { CanvasAdapter } from '../features/workspace/workspaceController'
 
 const ENGINE_LOCALES: Record<Language, LangPack> = {
@@ -85,6 +85,9 @@ export interface EditorApi extends CanvasAdapter {
   /** Shows a theme color without committing it (e.g. while dragging a color picker). */
   previewThemeVar(cssVar: ThemeVar, value: string): void
   /** Map-wide topic shape; undefined uses the color scheme's corners. */
+  getLines(): LineSettings
+  /** Replaces the map's line settings (defaults are dropped). */
+  setLines(lines: LineSettings): void
   getShape(): MapShape | undefined
   setShape(shape: MapShape | undefined): void
   getDirection(): Direction
@@ -159,6 +162,8 @@ export function MindMapCanvas({
     let savedTheme: MapTheme | undefined
     /** The map-wide topic shape; undefined = the color scheme's own corners. */
     let savedShape: MapShape | undefined
+    /** Map-wide line settings; undefined = defaults. */
+    let savedLines: LineSettings | undefined
 
     const mind = new MindElixir({
       el: element,
@@ -194,7 +199,7 @@ export function MindMapCanvas({
     mindRef.current = mind
 
     // wen2tu's branch lines, shapes and borders (shared with exported HTML).
-    const rendering = installMapRendering(mind, () => savedShape)
+    const rendering = installMapRendering(mind, { getShape: () => savedShape, getLines: () => savedLines })
 
     const notify = () => callbacks.current.onChange()
 
@@ -322,6 +327,7 @@ export function MindMapCanvas({
         const map = fromEngineData(data)
         if (savedTheme) map.theme = structuredClone(savedTheme)
         if (savedShape) map.shape = savedShape
+        if (savedLines) map.lines = { ...savedLines }
         return map
       },
       load: (map: MindMap) => {
@@ -330,6 +336,7 @@ export function MindMapCanvas({
         mind.compact = map.compact ?? false
         savedTheme = map.theme ? structuredClone(map.theme) : undefined
         savedShape = map.shape
+        savedLines = map.lines ? { ...map.lines } : undefined
         applyTheme(false)
         mind.refresh(map as unknown as MindElixirData)
         mind.clearHistory?.()
@@ -362,6 +369,15 @@ export function MindMapCanvas({
         notify()
       },
       previewThemeVar: (cssVar, value) => mind.container.style.setProperty(cssVar, value),
+      getLines: () => savedLines ?? {},
+      setLines: (lines) => {
+        const kept = Object.fromEntries(
+          Object.entries(lines).filter(([, value]) => value && value !== 'standard' && value !== 'curve'),
+        )
+        savedLines = Object.keys(kept).length ? kept : undefined
+        applyTheme(true)
+        notify()
+      },
       getShape: () => savedShape,
       setShape: (shape) => {
         savedShape = shape

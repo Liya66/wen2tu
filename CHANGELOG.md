@@ -20,6 +20,7 @@
 - 12 map templates in both languages, each with topic shapes by level; pour your own outline (with a template-aware AI prompt) into a template's look.
 - 13 extra topic shapes under Style → More…: title card, diamond, flag, hexagon, cut corners, sticky note, ellipse, cloud, leaf, ticket, folder tab, double border, tag.
 - Copy the current map as Markdown.
+- Branch lines (Style → Map): strength (standard, soft, faint, hidden), weight and style (curved, elbow, straight). Hidden keeps plain subtopics' underlines; a topic's border set to None removes its underline.
 - Topic style panel: corner shape, outline/underline borders, fills, text color/size/bold/italic/strikethrough, branch colors. Color pickers preview live and commit once, as a single undo step.
 
 ### Known limitations · 已知限制

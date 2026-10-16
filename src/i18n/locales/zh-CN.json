@@ -194,7 +194,19 @@
       "text": "子主题文字"
     },
     "more": "更多…",
-    "moreShapes": "更多形状"
+    "moreShapes": "更多形状",
+    "lines": "连线",
+    "lineStrength": "强度",
+    "lineStandard": "标准",
+    "lineSoft": "柔和",
+    "lineFaint": "淡",
+    "lineHidden": "隐藏",
+    "lineHiddenHint": "已隐藏节点之间的连线，普通子主题保留底线。如需去掉某个节点的底线，在节点页把边框设为“无”。",
+    "lineWidth": "粗细",
+    "lineStyle": "线型",
+    "lineCurve": "曲线",
+    "lineElbow": "折线",
+    "lineStraight": "直线"
   },
   "themes": {
     "bunny": "文兔兔",

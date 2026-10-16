@@ -30,7 +30,8 @@ wen2tu saves mind maps as UTF-8 JSON with a small versioned envelope, so files s
 | `map.direction` | Layout: `0` left, `1` right, `2` both sides, `3` downward. |
 | `map.compact` | Optional compact spacing. |
 | `map.theme` | Optional color scheme (see below). Omitted when the map follows the system's light/dark setting. |
-| `map.shape` | Optional corner shape for the center, first-level and boxed topics: `square`, `rounded` or `pill`. |
+| `map.shape` | Optional topic shape for the whole map: `square`, `rounded` or `pill` (subtopics become outlined boxes). |
+| `map.lines` | Optional branch line settings: `strength` (`soft`, `faint`, `hidden` — hidden keeps plain subtopics' underlines), `width` (`thin`, `bold`), `style` (`elbow`, `straight`). Defaults are omitted. |
 | `map.nodeData` | The root node. |
 | `map.arrows` | Optional links between any two nodes. |
 | `map.summaries` | Optional brackets that summarize a range of siblings (`start`–`end` child indexes of `parent`). |

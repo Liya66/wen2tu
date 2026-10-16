@@ -136,6 +136,19 @@ export interface MindMap {
   theme?: MapTheme
   /** Corner shape for the center, first-level and boxed topics. */
   shape?: 'square' | 'rounded' | 'pill'
+  /** How branch lines look; omitted fields use the defaults (standard, standard, curve). */
+  lines?: LineSettings
+}
+
+export const LINE_STRENGTHS = ['standard', 'soft', 'faint', 'hidden'] as const
+export const LINE_WIDTHS = ['thin', 'standard', 'bold'] as const
+export const LINE_STYLES = ['curve', 'elbow', 'straight'] as const
+
+export interface LineSettings {
+  /** Opacity of branch lines; `hidden` removes the connectors but keeps subtopic underlines. */
+  strength?: (typeof LINE_STRENGTHS)[number]
+  width?: (typeof LINE_WIDTHS)[number]
+  style?: (typeof LINE_STYLES)[number]
 }
 
 export interface MindDocument {

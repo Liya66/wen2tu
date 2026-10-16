@@ -164,6 +164,16 @@ describe('map shape', () => {
   })
 })
 
+describe('line settings', () => {
+  it('keeps chosen values, drops defaults and unknown values', () => {
+    const withLines = (lines: unknown) =>
+      parseDocument(JSON.stringify({ nodeData: { id: 'r', topic: 'r' }, lines })).map.lines
+    expect(withLines({ strength: 'hidden', width: 'bold', style: 'elbow' })).toEqual({ strength: 'hidden', width: 'bold', style: 'elbow' })
+    expect(withLines({ strength: 'standard', width: 'standard', style: 'curve' })).toBeUndefined()
+    expect(withLines({ strength: 'neon', style: 'straight' })).toEqual({ style: 'straight' })
+  })
+})
+
 describe('file names', () => {
   it('derives titles from file names', () => {
     expect(titleFromFileName('plan.mind.json')).toBe('plan')

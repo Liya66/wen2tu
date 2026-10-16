@@ -156,3 +156,17 @@
 .canvas .map-container me-tpc[data-shape='cloud'] {
   padding: 16px 26px !important;
 }
+
+/* ---- Branch lines: strength and width (variables set by mapRendering.ts) ---- */
+
+.canvas .map-container :is(svg.lines, svg.subLines) {
+  opacity: var(--wen2tu-line-opacity, 1);
+}
+
+.canvas .map-container svg.lines path {
+  stroke-width: var(--wen2tu-main-line, 3);
+}
+
+.canvas .map-container svg.subLines path {
+  stroke-width: var(--wen2tu-sub-line, 2);
+}

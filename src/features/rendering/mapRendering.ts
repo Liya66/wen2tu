@@ -2,7 +2,7 @@ import type { MainLineParams, MindElixirInstance, NodeObj, SubLineParams, Theme,
 import { mainBranchPath, subBranchPath, topicKind } from '../appearance/branchPath'
 import { toHexColor } from '../appearance/nodeStyles'
 import { OUTLINE_SHAPES, outlinePath } from '../appearance/nodeShapes'
-import type { MapNode, MapTheme, MindMap, NodeShape } from '../mindmap/types'
+import type { LineSettings, MapNode, MapTheme, MindMap, NodeShape } from '../mindmap/types'
 import './mapRendering.css'
 
 /*
@@ -21,6 +21,19 @@ export const SHAPE_RADII: Record<MapShape, { root: string; main: string; sub: st
 
 type SubBranch = NonNullable<Theme['generateSubBranch']>
 type ShapedNode = NodeObj & { shape?: NodeShape }
+
+const LINE_OPACITY: Record<NonNullable<LineSettings['strength']>, string> = {
+  standard: '1',
+  soft: '0.55',
+  faint: '0.28',
+  // Hidden connectors aren't drawn at all; what remains are underlines, shown fully.
+  hidden: '1',
+}
+const LINE_WIDTH: Record<NonNullable<LineSettings['width']>, { main: number; sub: number }> = {
+  thin: { main: 2, sub: 1.25 },
+  standard: { main: 3, sub: 2 },
+  bold: { main: 4.5, sub: 3 },
+}
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
 const DASHES: Record<string, string> = { solid: 'none', dashed: '6 4', dotted: '1.5 3.5' }
@@ -59,16 +72,26 @@ export function toEngineTheme(
  * - a map-wide topic shape (see mapRendering.css);
  * - borders chosen for first-level topics win over the engine's branch color.
  *
- * `getShape` returns the current map-wide shape.
+ * `getShape` and `getLines` return the map-wide shape and line settings.
  */
-export function installMapRendering(mind: MindElixirInstance, getShape: () => MapShape | undefined) {
+export function installMapRendering(
+  mind: MindElixirInstance,
+  { getShape, getLines }: { getShape: () => MapShape | undefined; getLines: () => LineSettings | undefined },
+) {
+  const pathOptions = () => {
+    const lines = getLines()
+    return { style: lines?.style, hidden: lines?.strength === 'hidden' }
+  }
   // The engine only passes geometry to the branch functions, so styled topics
   // are looked up by the position of their wrapper, indexed once per layout pass.
   const defaultSubBranch = mind.generateSubBranch
   const defaultMainBranch = mind.generateMainBranch
   const main: MainBranch = function (this: MindElixirInstance, params: MainLineParams) {
-    if (params.direction !== 'lhs' && params.direction !== 'rhs') return defaultMainBranch.call(this, params)
-    return mainBranchPath(params)
+    if (params.direction !== 'lhs' && params.direction !== 'rhs') {
+      // The downward layout keeps the engine's lines (it has no underlines).
+      return pathOptions().hidden ? '' : defaultMainBranch.call(this, params)
+    }
+    return mainBranchPath(params, pathOptions())
   }
   let styledIndex: Map<string, Topic> | null = null
   const engineLinkDiv = mind.linkDiv
@@ -97,7 +120,9 @@ export function installMapRendering(mind: MindElixirInstance, getShape: () => Ma
     return styledIndex.get(`${top},${left},${width},${height}`)
   }
   const sub: SubBranch = function (this: MindElixirInstance, params: SubLineParams) {
-    if (params.direction !== 'lhs' && params.direction !== 'rhs') return defaultSubBranch.call(this, params)
+    if (params.direction !== 'lhs' && params.direction !== 'rhs') {
+      return pathOptions().hidden ? '' : defaultSubBranch.call(this, params)
+    }
     const childTopic = styledTopicAt(params.cT, params.cL, params.cW, params.cH)
     const parentTopic = params.isFirst ? undefined : styledTopicAt(params.pT, params.pL, params.pW, params.pH)
     const gap = parseInt(this.container.style.getPropertyValue('--node-gap-x')) || 30
@@ -109,7 +134,7 @@ export function installMapRendering(mind: MindElixirInstance, getShape: () => Ma
       height: childTopic.offsetHeight,
     }
     const parentKind = parentTopic ? (kindOf(parentTopic.nodeObj) ?? undefined) : undefined
-    return subBranchPath(params, gap, child, parentKind)
+    return subBranchPath(params, gap, child, parentKind, pathOptions())
   }
   const branches = { sub, main }
 
@@ -200,6 +225,12 @@ export function installMapRendering(mind: MindElixirInstance, getShape: () => Ma
     // On the host element, not the engine's container: Mind Elixir only starts a
     // box selection when the container's className is exactly "map-container".
     mind.el.classList.toggle('wen2tu-shaped', Boolean(shape))
+    // Line strength and width only restyle the drawn lines (see mapRendering.css).
+    const lines = getLines()
+    mind.el.style.setProperty('--wen2tu-line-opacity', LINE_OPACITY[lines?.strength ?? 'standard'])
+    const width = LINE_WIDTH[lines?.width ?? 'standard']
+    mind.el.style.setProperty('--wen2tu-main-line', String(width.main))
+    mind.el.style.setProperty('--wen2tu-sub-line', String(width.sub))
     mind.changeTheme(toEngineTheme(theme, branches, shape), refresh)
   }
 

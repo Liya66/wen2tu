@@ -755,3 +755,39 @@ test('selecting several topics: Ctrl/⌘-click and box selection, also with a ma
     expect(await selected(), `box, shaped=${shaped}`).toEqual(expect.arrayContaining(['Alpha', 'Beta', 'Gamma']))
   }
 })
+
+test('branch lines: hidden keeps underlines, border None removes one, settings are saved', async ({ page }) => {
+  await useFakeFileSystem(page)
+  await openApp(page)
+  await addChildToRoot(page, 'Main')
+  await page.keyboard.press('Tab')
+  await page.keyboard.insertText('Plain sub')
+  await page.keyboard.press('Enter')
+
+  await page.getByRole('button', { name: 'Style' }).click()
+  const panel = page.getByRole('complementary', { name: 'Style' })
+  await panel.getByRole('tab', { name: 'Map' }).click()
+  const lines = panel.getByRole('region', { name: 'Branch lines' })
+
+  await lines.getByRole('radio', { name: 'Thick' }).click()
+  await expect(page.locator('svg.lines path').first()).toHaveCSS('stroke-width', '4.5px')
+  await lines.getByRole('radio', { name: 'Elbow' }).click()
+  // Same height as the center here, so the elbow is a straight run: no curve.
+  await expect(page.locator('svg.lines path').first()).not.toHaveAttribute('d', / C /)
+
+  await lines.getByRole('radio', { name: 'Hidden' }).click()
+  await expect(lines.getByText(/plain subtopics keep their underline/)).toBeVisible()
+  // No connector from the center; the plain subtopic keeps only its underline.
+  for (const path of await page.locator('svg.lines path').all()) await expect(path).toHaveAttribute('d', '')
+  await expect(page.locator('svg.subLines path').first()).toHaveAttribute('d', /^M [\d.]+ [\d.]+ H [\d.]+$/)
+
+  // Border "None" on that subtopic removes its underline too.
+  await page.locator('me-tpc').filter({ hasText: /^Plain sub$/ }).click()
+  await panel.getByRole('radio', { name: 'None' }).first().click()
+  await expect(page.locator('svg.subLines path').first()).toHaveAttribute('d', '')
+
+  await page.keyboard.press('ControlOrMeta+s')
+  await expect(page.getByTestId('save-status')).toHaveText(/^Saved to/)
+  const saved = JSON.parse(await page.evaluate(() => Object.values(window.__fs.files)[0]))
+  expect(saved.map.lines).toEqual({ strength: 'hidden', width: 'bold', style: 'elbow' })
+})
