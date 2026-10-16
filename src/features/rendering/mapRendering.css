@@ -8,7 +8,7 @@
 
 /* With a map-wide shape, every subtopic is outlined in its branch color.
    A topic's own style (inline) still wins. */
-.canvas .map-container.wen2tu-shaped me-children me-tpc {
+.canvas.wen2tu-shaped .map-container me-children me-tpc {
   border: 2px solid var(--wen2tu-branch, var(--main-color));
   padding: 4px 10px;
 }

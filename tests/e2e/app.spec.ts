@@ -717,3 +717,41 @@ test.describe('templates', () => {
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('# Central topic\n\n- Point A\n')
   })
 })
+
+test('selecting several topics: Ctrl/⌘-click and box selection, also with a map shape', async ({ page }) => {
+  await openApp(page)
+  for (const name of ['Alpha', 'Beta', 'Gamma']) await addChildToRoot(page, name)
+  const topic = (name: string) => page.locator('me-tpc').filter({ hasText: new RegExp(`^${name}$`) })
+  const selected = () => page.locator('me-tpc.selected').allInnerTexts()
+
+  const boxSelect = async () => {
+    await page.locator('.map-container').click({ position: { x: 30, y: 400 } })
+    const boxes = await Promise.all(['Alpha', 'Beta', 'Gamma'].map((n) => topic(n).boundingBox()))
+    const x1 = Math.min(...boxes.map((b) => b!.x)) - 15
+    const y1 = Math.min(...boxes.map((b) => b!.y)) - 15
+    await page.mouse.move(x1, y1)
+    await page.mouse.down()
+    await page.mouse.move(
+      Math.max(...boxes.map((b) => b!.x + b!.width)) + 15,
+      Math.max(...boxes.map((b) => b!.y + b!.height)) + 15,
+      { steps: 15 },
+    )
+    await page.mouse.up()
+  }
+
+  for (const shaped of [false, true]) {
+    if (shaped) {
+      await page.getByRole('button', { name: 'Style' }).click()
+      const panel = page.getByRole('complementary', { name: 'Style' })
+      await panel.getByRole('tab', { name: 'Map' }).click()
+      await panel.getByRole('radio', { name: 'Square' }).click()
+      await panel.getByRole('button', { name: 'Close style panel' }).click()
+    }
+    await topic('Alpha').click()
+    await topic('Beta').click({ modifiers: ['ControlOrMeta'] })
+    expect((await selected()).sort(), `ctrl-click, shaped=${shaped}`).toEqual(['Alpha', 'Beta'])
+
+    await boxSelect()
+    expect(await selected(), `box, shaped=${shaped}`).toEqual(expect.arrayContaining(['Alpha', 'Beta', 'Gamma']))
+  }
+})

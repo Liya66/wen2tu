@@ -197,7 +197,9 @@ export function installMapRendering(mind: MindElixirInstance, getShape: () => Ma
     // border), so it must be in place before changeTheme lays out and draws
     // the branch lines; otherwise lines are measured against the old sizes.
     mind.container.style.setProperty('--wen2tu-sub-radius', shape ? SHAPE_RADII[shape].sub : '')
-    mind.container.classList.toggle('wen2tu-shaped', Boolean(shape))
+    // On the host element, not the engine's container: Mind Elixir only starts a
+    // box selection when the container's className is exactly "map-container".
+    mind.el.classList.toggle('wen2tu-shaped', Boolean(shape))
     mind.changeTheme(toEngineTheme(theme, branches, shape), refresh)
   }
 
