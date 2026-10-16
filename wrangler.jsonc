@@ -1,0 +1,10 @@
+// Cloudflare deploy settings. wen2tu is a static site: `npm run build` writes
+// it to dist/, and `wrangler deploy` uploads that folder as static assets
+// (public/_headers, with the Content-Security-Policy, is applied as-is).
+{
+  "name": "wen2tu",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist"
+  }
+}

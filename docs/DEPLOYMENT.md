@@ -28,6 +28,12 @@ The Node.js version comes from `.node-version` (22) in the repository. Node 版�
 
 4. **Save and Deploy**. The site is published at `https://<project>.pages.dev`; every push to `main` deploys again, and pull requests get preview URLs.
 
+### Or as a Worker · 或者部署为 Worker
+
+If the project was created under **Workers** (build command `npm run build`, deploy command `npx wrangler deploy`), the repository's `wrangler.jsonc` tells Wrangler to upload `dist/` as static assets. Without it, Wrangler tries to set the project up by installing extra packages, which can fail with `npm error Cannot read properties of null (reading 'edgesOut')`.
+
+如果在 **Workers** 下创建了项目（构建命令 `npm run build`，部署命令 `npx wrangler deploy`），仓库里的 `wrangler.jsonc` 会让 Wrangler 直接上传 `dist/` 静态文件。没有这个文件时，Wrangler 会尝试自动配置并安装额外的包，可能报 `npm error Cannot read properties of null (reading 'edgesOut')`。
+
 ## 3. Enable Web Analytics (optional) · 开启访问统计（可选）
 
 Pages project → **Metrics** → **Web Analytics** → **Enable**. Cloudflare injects its cookieless beacon automatically; no code change is needed. `public/_headers` already allows the beacon in the Content-Security-Policy (`static.cloudflareinsights.com` and `cloudflareinsights.com`), and nothing else from third parties.
