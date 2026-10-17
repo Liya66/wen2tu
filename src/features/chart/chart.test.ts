@@ -152,7 +152,7 @@ describe('drawing rules', () => {
   const ctx = (lang: BuildContext['lang'] = 'zh-CN'): BuildContext => ({
     lang,
     colors: LIGHT,
-    labels: { other: '其他', value: '数值', period: '时间' },
+    labels: { other: '其他', value: '数值', period: '时间', points: '点' },
     width: 800,
   })
   const top = (id: string) => {

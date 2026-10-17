@@ -393,6 +393,77 @@
     "period": "时间",
     "loading": "正在加载图表…",
     "meltedColumns": "{{count}} 列，已转成长表",
-    "multiples": "每组一张小图，刻度相同"
+    "multiples": "每组一张小图，刻度相同",
+    "points": "点",
+    "style": {
+      "title": "图表样式",
+      "tab": {
+        "chart": "图表",
+        "colors": "颜色"
+      },
+      "chartTitle": "标题",
+      "useSuggestedTitle": "使用建议标题",
+      "palette": "配色",
+      "palettes": {
+        "slate": "石板蓝",
+        "teal": "青",
+        "green": "松绿",
+        "ochre": "赭黄",
+        "carrot": "胡萝卜",
+        "rose": "玫瑰",
+        "violet": "藕紫",
+        "gray": "灰"
+      },
+      "customPalette": "自定义",
+      "paletteHint": "单一色调，深浅区分系列；所有预设都通过色盲和对比度检查。",
+      "labels": "数值标签",
+      "labelsAll": "全部",
+      "legend": "图例",
+      "orientation": "条形方向",
+      "vertical": "竖向",
+      "horizontal": "横向",
+      "sort": "排序",
+      "sortValue": "按数值",
+      "sortOriginal": "原顺序",
+      "numbers": "数字",
+      "numbersCompactZh": "万 / 亿",
+      "numbersCompactEn": "K / M",
+      "numbersFull": "完整",
+      "grid": "显示网格线",
+      "auto": "自动",
+      "top": "上方",
+      "bottom": "下方",
+      "hidden": "隐藏",
+      "resetChart": "恢复默认样式",
+      "resetColors": "全部颜色恢复默认",
+      "resetColor": "恢复默认颜色",
+      "pickColor": "选择颜色",
+      "noColors": "这种图的颜色来自配色：在“图表”里换一组配色。",
+      "colorsHintSeries": "给每个系列单独设色。颜色跟着名称走，排序或改数据后不会错位。",
+      "colorsHintItems": "可以单独给某一项设色，比如突出一根柱子。",
+      "issueCount": "{{count}} 处颜色不易分辨",
+      "fixAll": "全部修正",
+      "fix": "修正",
+      "issue": {
+        "faint": "太浅，在背景上看不清",
+        "same": "和「{{other}}」颜色相同",
+        "similar": "和「{{other}}」太像",
+        "cvd": "红绿色盲读者难以区分它和「{{other}}」"
+      }
+    },
+    "export": {
+      "label": "导出",
+      "png": "PNG 图片",
+      "svg": "SVG 图片",
+      "pngTransparent": "PNG 图片（透明背景）",
+      "svgTransparent": "SVG 图片（透明背景）",
+      "transparentHint": "不带背景；深色模式下按浅色版本导出。",
+      "copy": "复制图片",
+      "copied": "图片已复制，可以粘贴到文档或聊天里。",
+      "copyFailed": "无法复制图片：这个浏览器不允许。请改用 PNG 导出。",
+      "csv": "数据（CSV）",
+      "csvHint": "识别出的数据：完整数字，日期为标准格式，Excel 可直接打开。",
+      "failed": "导出失败，请重试。"
+    }
   }
 }

@@ -39,20 +39,25 @@ export function compactNumber(value: number, lang: ChartLanguage): string {
   return trim(value, abs < 1 ? 3 : abs < 10 ? 2 : abs < 100 ? 1 : 0)
 }
 
-/** A value with its unit, for axis ticks and tooltips. */
-export function formatValue(value: number | null | undefined, unit: Unit, lang: ChartLanguage): string {
+/** A full number with digit grouping: 12,345,678.9. */
+export function fullNumber(value: number, lang: ChartLanguage): string {
+  return new Intl.NumberFormat(lang, { maximumFractionDigits: Math.abs(value) < 10 ? 2 : 1 }).format(value)
+}
+
+/** A value with its unit, for axis ticks and tooltips; `full` writes every digit instead of 万/K. */
+export function formatValue(value: number | null | undefined, unit: Unit, lang: ChartLanguage, full = false): string {
   if (value === null || value === undefined || Number.isNaN(value)) return '–'
   if (unit.percent) return trim(value * 100, Math.abs(value) < 0.1 ? 2 : 1) + '%'
   const sign = value < 0 ? '-' : ''
-  const body = compactNumber(Math.abs(value), lang)
+  const body = full ? fullNumber(Math.abs(value), lang) : compactNumber(Math.abs(value), lang)
   // Chinese: 3.2万元 · English: $1.2M, 12 kg
   const suffix = unit.suffix ? (lang === 'en' && /^[a-z]/i.test(unit.suffix) ? ' ' : '') + unit.suffix : ''
   return sign + unit.prefix + body + suffix
 }
 
 /** Axis ticks leave the unit word to the axis name. */
-export function formatTick(value: number, unit: Unit, lang: ChartLanguage): string {
-  return formatValue(value, { ...unit, suffix: '' }, lang)
+export function formatTick(value: number, unit: Unit, lang: ChartLanguage, full = false): string {
+  return formatValue(value, { ...unit, suffix: '' }, lang, full)
 }
 
 const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']

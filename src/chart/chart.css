@@ -309,3 +309,195 @@ html:has(.chart-app) #root {
     display: none;
   }
 }
+
+/* ---- style panel and selection ---- */
+
+.chart-app[data-style-open] .chart-main {
+  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr) 288px;
+  max-width: 1600px;
+}
+
+.chart-style-panel {
+  position: sticky;
+  top: calc(var(--toolbar-height) + 20px);
+  max-height: calc(100vh - var(--toolbar-height) - 40px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.chart-style-target {
+  margin: 8px 14px 0;
+  font-size: 12px;
+}
+
+.chart-app[data-style-open] .chart-card {
+  cursor: pointer;
+}
+
+.chart-card[data-selected] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+  cursor: default;
+}
+
+.chart-card-actions {
+  margin-left: auto;
+}
+
+.chart-card-actions .tool-button {
+  height: 28px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.chart-use-title,
+.chart-reset {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.chart-palette-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.chart-palette-custom {
+  position: relative;
+  align-items: center;
+  justify-content: center;
+}
+
+.chart-palette-custom[data-pressed='true'] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.chart-palette-custom:focus-within {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.chart-palette-custom input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.palette-chip .chart-palette-custom-label {
+  flex: none;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.chart-swatches {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.chart-swatches li {
+  display: grid;
+  gap: 6px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.chart-swatches .color-row {
+  grid-template-columns: repeat(7, minmax(0, 24px));
+}
+
+.chart-swatch-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 24px;
+}
+
+.chart-swatch-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.chart-issues,
+.chart-issue {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--warning-bg);
+  font-size: 12px;
+}
+
+.chart-issues span,
+.chart-issue span {
+  flex: 1;
+}
+
+.chart-issues .button,
+.chart-issue .button {
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+.chart-notice {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  z-index: 200;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.chart-notice span {
+  display: block;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: #ffffff;
+  font-size: 13px;
+  box-shadow: var(--shadow);
+}
+
+@media (max-width: 1100px) {
+  .chart-app[data-style-open] .chart-main {
+    grid-template-columns: minmax(0, 1fr) 288px;
+  }
+
+  .chart-app[data-style-open] .chart-input {
+    grid-column: 1 / -1;
+    position: static;
+    max-height: none;
+  }
+}
+
+@media (max-width: 799px) {
+  .chart-app[data-style-open] .chart-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* A sheet over the bottom of the screen, as in the mind map editor. */
+  .chart-style-panel {
+    position: fixed;
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 110;
+    max-height: 55%;
+    border-radius: 12px 12px 0 0;
+    box-shadow: var(--shadow);
+  }
+}

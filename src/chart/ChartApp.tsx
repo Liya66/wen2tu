@@ -1,16 +1,42 @@
-import { useDeferredValue, useMemo, useState } from 'react'
+import { PaintBucket } from 'lucide-react'
+import { useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LanguageSwitcher } from '../components/LanguageSwitcher'
 import { Logo } from '../components/Logo'
 import { columnLabel } from '../features/chart/buildOption'
 import { FIXTURES } from '../features/chart/fixtures'
 import { formatDate, formatValue, type ChartLanguage } from '../features/chart/format'
-import { recommend } from '../features/chart/recommend'
+import { recommend, type Recommendation } from '../features/chart/recommend'
+import { DEFAULT_STYLE, type ChartStyle } from '../features/chart/style'
 import { analyzeText, chartColumns, type Column, type Note, type Table } from '../features/chart/table'
 import { languagePath } from '../i18n'
 import { ChartCard } from './ChartCard'
+import { ChartStylePanel } from './ChartStylePanel'
+import { useChartContext } from './useChartContext'
 
 const PREVIEW_ROWS = 50
+const STYLE_PANEL_KEY = 'data2tu.stylePanel'
+
+function readFlag(key: string): boolean {
+  try {
+    return localStorage.getItem(key) === '1'
+  } catch {
+    return false
+  }
+}
+
+function writeFlag(key: string, value: boolean) {
+  try {
+    localStorage.setItem(key, value ? '1' : '0')
+  } catch {
+    // The preference just won't persist.
+  }
+}
+
+/** Identifies a chart by what it draws, so its style survives edits to the pasted table. */
+function chartKey(rec: Recommendation): string {
+  return [rec.type, rec.x?.name, rec.series?.name, rec.label?.name, ...rec.measures.map((m) => m.name)].join('|')
+}
 
 export function ChartApp() {
   const { t, i18n } = useTranslation()
@@ -20,6 +46,23 @@ export function ChartApp() {
   const deferred = useDeferredValue(text)
   const table = useMemo(() => (deferred.trim() ? analyzeText(deferred) : null), [deferred])
   const recommendations = useMemo(() => (table ? recommend(table).slice(0, 3) : []), [table])
+  const [styles, setStyles] = useState<Record<string, ChartStyle>>({})
+  const [selected, setSelected] = useState(0)
+  const [styleOpen, setStyleOpen] = useState(() => readFlag(STYLE_PANEL_KEY))
+  const [notice, setNotice] = useState('')
+  const current = recommendations[Math.min(selected, recommendations.length - 1)]
+  const styleOf = (rec: Recommendation) => styles[chartKey(rec)] ?? DEFAULT_STYLE
+
+  const toggleStyle = () => {
+    writeFlag(STYLE_PANEL_KEY, !styleOpen)
+    setStyleOpen(!styleOpen)
+  }
+
+  useEffect(() => {
+    if (!notice) return
+    const timer = setTimeout(() => setNotice(''), 3000)
+    return () => clearTimeout(timer)
+  }, [notice])
 
   const pickSample = (id: string) => {
     setSample(id)
@@ -28,7 +71,7 @@ export function ChartApp() {
   }
 
   return (
-    <div className="chart-app">
+    <div className="chart-app" data-style-open={styleOpen && Boolean(current) || undefined}>
       <header className="toolbar">
         <div className="brand">
           <Logo size={26} />
@@ -37,6 +80,18 @@ export function ChartApp() {
         </div>
         <span className="chart-tagline">{t('chart.tagline')}</span>
         <div className="toolbar-end">
+          <button
+            type="button"
+            className="tool-button"
+            aria-pressed={styleOpen}
+            aria-controls="style-panel"
+            onClick={toggleStyle}
+            title={t('toolbar.style')}
+            disabled={!current}
+          >
+            <PaintBucket size={18} aria-hidden="true" />
+            <span className="tool-label">{t('toolbar.style')}</span>
+          </button>
           <a className="tool-button chart-link" href={languagePath('/', lang)}>
             {t('chart.mindmap')}
           </a>
@@ -94,11 +149,34 @@ export function ChartApp() {
           {table && !recommendations.length && <p className="chart-empty">{t('chart.noChart')}</p>}
           {table &&
             recommendations.map((rec, i) => (
-              <ChartCard key={`${deferred.length}-${i}-${rec.type}`} rank={i + 1} rec={rec} table={table} />
+              <ChartCard
+                key={`${i}-${chartKey(rec)}`}
+                rank={i + 1}
+                rec={rec}
+                table={table}
+                style={styleOf(rec)}
+                selected={styleOpen && rec === current}
+                onSelect={() => setSelected(i)}
+                onNotice={setNotice}
+              />
             ))}
           {table && recommendations.length > 0 && <DataTable table={table} lang={lang} />}
         </section>
+
+        {styleOpen && current && table && (
+          <ChartStylePanel
+            rank={recommendations.indexOf(current) + 1}
+            rec={current}
+            table={table}
+            style={styleOf(current)}
+            onChange={(style) => setStyles((all) => ({ ...all, [chartKey(current)]: style }))}
+            onClose={toggleStyle}
+          />
+        )}
       </main>
+      <div className="chart-notice" role="status" aria-live="polite">
+        {notice && <span>{notice}</span>}
+      </div>
     </div>
   )
 }
@@ -188,7 +266,7 @@ function cellText(col: Column, row: number, lang: ChartLanguage): string {
 function DataTable({ table, lang }: { table: Table; lang: ChartLanguage }) {
   const { t } = useTranslation()
   const { columns, rowCount } = chartColumns(table)
-  const labels = { other: t('chart.other'), value: t('chart.value'), period: t('chart.period') }
+  const { labels } = useChartContext()
   const rows = Math.min(rowCount, PREVIEW_ROWS)
   return (
     <details className="chart-data">

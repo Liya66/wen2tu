@@ -393,6 +393,77 @@
     "period": "Period",
     "loading": "Loading chart…",
     "meltedColumns": "{{count}} columns, unpivoted",
-    "multiples": "one small chart per group, on the same scale"
+    "multiples": "one small chart per group, on the same scale",
+    "points": "Points",
+    "style": {
+      "title": "Chart style",
+      "tab": {
+        "chart": "Chart",
+        "colors": "Colors"
+      },
+      "chartTitle": "Title",
+      "useSuggestedTitle": "Use the suggested title",
+      "palette": "Palette",
+      "palettes": {
+        "slate": "Slate",
+        "teal": "Teal",
+        "green": "Pine",
+        "ochre": "Ochre",
+        "carrot": "Carrot",
+        "rose": "Rose",
+        "violet": "Lilac",
+        "gray": "Gray"
+      },
+      "customPalette": "Custom",
+      "paletteHint": "One hue, with shades telling series apart. Every preset passes the color-blindness and contrast checks.",
+      "labels": "Value labels",
+      "labelsAll": "All",
+      "legend": "Legend",
+      "orientation": "Bars",
+      "vertical": "Vertical",
+      "horizontal": "Horizontal",
+      "sort": "Order",
+      "sortValue": "By value",
+      "sortOriginal": "As pasted",
+      "numbers": "Numbers",
+      "numbersCompactZh": "万 / 亿",
+      "numbersCompactEn": "K / M",
+      "numbersFull": "Full",
+      "grid": "Show gridlines",
+      "auto": "Auto",
+      "top": "Top",
+      "bottom": "Bottom",
+      "hidden": "Hidden",
+      "resetChart": "Reset the chart style",
+      "resetColors": "Reset all colors",
+      "resetColor": "Reset color",
+      "pickColor": "Pick a color",
+      "noColors": "This chart takes its colors from the palette: pick another one under “Chart”.",
+      "colorsHintSeries": "Give any series its own color. Colors follow the name, so sorting or editing the data keeps them in place.",
+      "colorsHintItems": "Color single items, for example to make one bar stand out.",
+      "issueCount": "{{count}} colors are hard to tell apart",
+      "fixAll": "Fix all",
+      "fix": "Fix",
+      "issue": {
+        "faint": "Too light to see on the background",
+        "same": "Same color as “{{other}}”",
+        "similar": "Too close to “{{other}}”",
+        "cvd": "Hard to tell from “{{other}}” for red–green color-blind readers"
+      }
+    },
+    "export": {
+      "label": "Export",
+      "png": "PNG image",
+      "svg": "SVG image",
+      "pngTransparent": "PNG image (transparent)",
+      "svgTransparent": "SVG image (transparent)",
+      "transparentHint": "No background; dark mode exports the light version.",
+      "copy": "Copy image",
+      "copied": "Image copied: paste it into a document or chat.",
+      "copyFailed": "Couldn't copy the image: this browser doesn't allow it. Export a PNG instead.",
+      "csv": "Data (CSV)",
+      "csvHint": "The detected data: full numbers and ISO dates, ready for Excel.",
+      "failed": "The export failed. Please try again."
+    }
   }
 }

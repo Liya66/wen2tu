@@ -12,6 +12,7 @@
  * The ramp passes the ordinal checks (one hue, monotone lightness, visible
  * steps, light end ≥ 2:1) on wen2tu's light and dark card surfaces.
  */
+import { paletteFromHue } from './colorMath'
 
 export interface ChartColors {
   mode: 'light' | 'dark'
@@ -39,10 +40,9 @@ export const LIGHT: ChartColors = {
   axis: '#cfc8bc',
   grid: '#efe9df',
   border: '#ece4d8',
-  ramp: ['#90b5dc', '#7196bc', '#54789c', '#385b7e', '#1d3f60'],
-  accent: '#4a6d91',
   context: '#bab5ad',
-  sequential: ['#eef3f8', '#c3d6ea', '#90b5dc', '#54789c', '#1d3f60'],
+  // Muted slate: OKLCH hue 250, chroma 0.07 (the "slate" palette in style.ts).
+  ...paletteFromHue(250, 0.07, 'light'),
 }
 
 export const DARK: ChartColors = {
@@ -53,10 +53,8 @@ export const DARK: ChartColors = {
   axis: '#4a4b55',
   grid: '#363741',
   border: '#3b3c46',
-  ramp: ['#43668a', '#5d81a6', '#779cc2', '#93b8e0', '#afd5fe'],
-  accent: '#86abd2',
   context: '#5a5b66',
-  sequential: ['#30353f', '#3d5571', '#5d81a6', '#93b8e0', '#cfe6ff'],
+  ...paletteFromHue(250, 0.07, 'dark'),
 }
 
 export const FONT =

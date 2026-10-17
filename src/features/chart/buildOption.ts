@@ -8,13 +8,15 @@
  * or turn the bars sideways; one hue (see "colour plans" below).
  */
 import type { BarSeriesOption, CustomSeriesOption, HeatmapSeriesOption, LineSeriesOption, PieSeriesOption, ScatterSeriesOption } from 'echarts/charts'
-import type { GridComponentOption, LegendComponentOption, TooltipComponentOption, VisualMapComponentOption } from 'echarts/components'
+import type { GridComponentOption, LegendComponentOption, TitleComponentOption, TooltipComponentOption, VisualMapComponentOption } from 'echarts/components'
 import type { CustomSeriesRenderItemAPI, CustomSeriesRenderItemParams } from 'echarts'
 import type { ComposeOption } from 'echarts/core'
 import { fillPeriods, formatDate, formatTick, formatValue, type ChartLanguage } from './format'
+import { contrast } from './colorMath'
 import { comparable, type Recommendation } from './recommend'
 import type { Column, Table, Unit } from './table'
 import { chartColumns } from './table'
+import { DEFAULT_STYLE, styledColors, type ChartStyle } from './style'
 import type { ChartColors } from './theme'
 
 export type ChartOption = ComposeOption<
@@ -26,6 +28,7 @@ export type ChartOption = ComposeOption<
   | CustomSeriesOption
   | GridComponentOption
   | LegendComponentOption
+  | TitleComponentOption
   | TooltipComponentOption
   | VisualMapComponentOption
 >
@@ -34,6 +37,8 @@ export interface ChartLabels {
   other: string
   value: string
   period: string
+  /** The swatch name for a scatter plot's points. */
+  points: string
 }
 
 export interface BuildContext {
@@ -44,6 +49,18 @@ export interface BuildContext {
   width: number
   /** Name of the line to highlight among unordered lines (the largest when unset). */
   highlight?: string
+  /** The person's choices from the style panel. */
+  style?: ChartStyle
+}
+
+/** The context inside the builders: the style resolved and its palette applied to the colours. */
+type Ctx = BuildContext & { style: ChartStyle }
+
+/** A colour the person can change: a series, slice, bar or row. */
+export interface Swatch {
+  key: string
+  color: string
+  custom: boolean
 }
 
 export interface BuiltChart {
@@ -51,6 +68,10 @@ export interface BuiltChart {
   height: number
   /** Drawn as small multiples: one panel per group, on one scale. */
   multiples?: boolean
+  /** The colours the style panel can change, in drawing order. */
+  swatches?: Swatch[]
+  /** Whether the swatches' marks sit together and must be told apart (series, slices) or not (bars of one series). */
+  distinguish?: boolean
 }
 
 const NO_UNIT: Unit = { prefix: '', suffix: '', percent: false }
@@ -108,7 +129,7 @@ function sortKeys(col: Column, keys: string[], totals: Map<string, number>, keep
   return [...keys].sort((a, b) => (totals.get(b) ?? 0) - (totals.get(a) ?? 0))
 }
 
-function pivot(rec: Recommendation, table: Table, ctx: BuildContext, maxSeries = MAX_PANELS): Pivot {
+function pivot(rec: Recommendation, table: Table, ctx: Ctx, maxSeries = MAX_PANELS): Pivot {
   const { rowCount } = chartColumns(table)
   const x = rec.x!
   const sortedByQuery = Boolean(table.sql?.orderBy.some((o) => rec.measures.some((m) => m.name.toLowerCase() === o.name)))
@@ -145,7 +166,7 @@ function pivot(rec: Recommendation, table: Table, ctx: BuildContext, maxSeries =
     }
   }
 
-  const xKeys = sortKeys(x, xSeen, xTotals, sortedByQuery)
+  const xKeys = sortKeys(x, xSeen, xTotals, sortedByQuery || ctx.style.sort === 'original')
   let sKeys = rec.series ? sortKeys(rec.series, sSeen, sTotals, false) : sSeen
   const measureOf = (sKey: string) => (rec.series ? rec.measures[0] : rec.measures.find((m) => m.name === sKey)!)
   const valueOf = (sKey: string, xKey: string): number | null => {
@@ -175,6 +196,16 @@ function pivot(rec: Recommendation, table: Table, ctx: BuildContext, maxSeries =
 
 // ---- shared pieces ----
 
+/** Every digit instead of 万/K. */
+function full(ctx: Ctx): boolean {
+  return ctx.style.numbers === 'full'
+}
+
+/** A custom colour for `key`, if the person set one. */
+function customColor(ctx: Ctx, key: string): string | undefined {
+  return ctx.style.colors[key]
+}
+
 /** Rough rendered width of 12px text: CJK characters are about twice as wide as Latin ones. */
 function textWidth(text: string): number {
   let n = 0
@@ -182,10 +213,20 @@ function textWidth(text: string): number {
   return n
 }
 
-function legend(names: string[], ctx: BuildContext): LegendComponentOption | undefined {
-  // One series needs no legend: the card title names it.
-  if (names.length < 2) return undefined
-  return { type: 'scroll', top: 0, left: 0, data: names, textStyle: { color: ctx.colors.textMuted } }
+/**
+ * The legend for two or more series — shown when the chart needs it
+ * (`auto`) or the person asked for it — and the room it takes above or
+ * below the plot.
+ */
+function legendFor(names: string[], ctx: Ctx, auto: boolean): { legend?: LegendComponentOption; top: number; bottom: number } {
+  const mode = ctx.style.legend
+  if (names.length < 2 || mode === 'none' || (mode === 'auto' && !auto)) return { top: 0, bottom: 0 }
+  const atBottom = mode === 'bottom'
+  return {
+    legend: { type: 'scroll', left: 0, ...(atBottom ? { bottom: 0 } : { top: 0 }), data: names, textStyle: { color: ctx.colors.textMuted } },
+    top: atBottom ? 0 : 28,
+    bottom: atBottom ? 28 : 0,
+  }
 }
 
 function tooltipRow(color: string, name: string, value: string): string {
@@ -200,7 +241,7 @@ function escapeHtml(text: string): string {
 type AxisParam = { axisValueLabel?: string; name?: string; seriesName?: string; value?: unknown; color?: unknown; dataIndex?: number; seriesIndex?: number }
 
 /** `refs` maps each ECharts series index to its pivot series (-1: context only, left out). */
-function axisTooltip(p: Pivot, ctx: BuildContext, refs: number[]): TooltipComponentOption {
+function axisTooltip(p: Pivot, ctx: Ctx, refs: number[]): TooltipComponentOption {
   return {
     trigger: 'axis',
     axisPointer: { type: 'shadow' },
@@ -210,7 +251,7 @@ function axisTooltip(p: Pivot, ctx: BuildContext, refs: number[]): TooltipCompon
       const index = list[0].dataIndex ?? 0
       const rows = list.map((item) => {
         const s = p.series[refs[item.seriesIndex ?? 0]]
-        return tooltipRow(String(item.color), s.name, formatValue(s.values[index], s.unit, ctx.lang))
+        return tooltipRow(String(item.color), s.name, formatValue(s.values[index], s.unit, ctx.lang, full(ctx)))
       })
       return `<div style="margin-bottom:4px;color:${ctx.colors.textMuted}">${escapeHtml(p.xLabels[index] ?? '')}</div>${rows.join('')}`
     },
@@ -243,7 +284,7 @@ function planFor(kind: 'bar' | 'line', count: number, ordered: boolean): Plan {
 }
 
 /** `count` evenly spaced ramp steps, least to most prominent. */
-function rampColors(count: number, ctx: BuildContext): string[] {
+function rampColors(count: number, ctx: Ctx): string[] {
   const ramp = ctx.colors.ramp
   if (count <= 1) return [ctx.colors.accent]
   if (count === 2) return [ramp[1], ramp[3]]
@@ -251,7 +292,7 @@ function rampColors(count: number, ctx: BuildContext): string[] {
 }
 
 /** Ordered series step up the ramp in order; unordered ones by size, the largest darkest. */
-function seriesColors(p: Pivot, ordered: boolean, ctx: BuildContext): string[] {
+function seriesColors(p: Pivot, ordered: boolean, ctx: Ctx): string[] {
   const colors = rampColors(p.series.length, ctx)
   if (ordered) return colors
   const byTotal = p.series.map((_, i) => i).sort((a, b) => total(p.series[b]) - total(p.series[a]))
@@ -265,7 +306,7 @@ function total(s: Pivot['series'][number]): number {
 }
 
 /** The series to highlight: the one asked for, else the largest. */
-function highlightIndex(p: Pivot, indices: number[], ctx: BuildContext): number {
+function highlightIndex(p: Pivot, indices: number[], ctx: Ctx): number {
   const asked = indices.find((i) => p.series[i].name === ctx.highlight)
   if (asked !== undefined) return asked
   return indices.reduce((best, i) => (total(p.series[i]) > total(p.series[best]) ? i : best), indices[0])
@@ -289,7 +330,7 @@ interface Panel {
 }
 
 /** Panels in a grid: as many columns as fit (≥ 300px each), filled row by row. */
-function layoutPanels(count: number, ctx: BuildContext, top: number, height: number, minWidth = 300): { panels: Panel[]; bottom: number } {
+function layoutPanels(count: number, ctx: Ctx, top: number, height: number, minWidth = 300): { panels: Panel[]; bottom: number } {
   const cols = Math.max(1, Math.min(count, Math.floor(ctx.width / minWidth)))
   const width = ctx.width / cols
   const gapY = 36
@@ -304,23 +345,31 @@ function layoutPanels(count: number, ctx: BuildContext, top: number, height: num
 
 // ---- bars ----
 
-function barChart(rec: Recommendation, table: Table, ctx: BuildContext): BuiltChart {
+function barChart(rec: Recommendation, table: Table, ctx: Ctx): BuiltChart {
   const ordered = orderedSeries(rec)
   const probe = pivot(rec, table, ctx, Infinity)
   const plan = planFor('bar', probe.series.length, ordered)
   const p = plan === 'multiples' && !ordered ? pivot(rec, table, ctx, MAX_PANELS) : probe
-  if (plan === 'multiples') return barMultiples(p, Boolean(rec.horizontal), ctx)
+  const horizontal = ctx.style.orientation === 'auto' ? Boolean(rec.horizontal) : ctx.style.orientation === 'horizontal'
+  if (plan === 'multiples') return barMultiples(p, horizontal, ctx)
 
   const stacked = rec.type === 'bar-stacked'
-  const horizontal = Boolean(rec.horizontal)
   const unit = p.series[0]?.unit ?? NO_UNIT
-  const hasLegend = p.series.length >= 2
+  const lg = legendFor(p.series.map((s) => s.name), ctx, true)
   const n = p.xKeys.length
-  const colors = seriesColors(p, ordered, ctx)
+  const planned = seriesColors(p, ordered, ctx)
+  // One series: each bar can have its own colour. Several: each series can.
+  const single = p.series.length === 1
+  const colors = p.series.map((s, i) => (single ? planned[0] : (customColor(ctx, s.name) ?? planned[i])))
   const series: BarSeriesOption[] = p.series.map((s, i) => ({
     type: 'bar',
     name: s.name,
-    data: s.values,
+    data: single
+      ? s.values.map((v, j) => {
+          const color = customColor(ctx, p.xLabels[j])
+          return color && v !== null ? { value: v, itemStyle: { color } } : v
+        })
+      : s.values,
     stack: stacked ? 'total' : undefined,
     barMaxWidth: 24,
     barGap: '15%',
@@ -331,18 +380,25 @@ function barChart(rec: Recommendation, table: Table, ctx: BuildContext): BuiltCh
       : { borderRadius: dataEnd(horizontal) },
     emphasis: { focus: 'series' },
   }))
-  // A single series gets a value at each bar end when there is room.
-  if (series.length === 1 && n <= 16) series[0].label = barValueLabel(horizontal, unit, ctx)
+  // Values at the bar ends: by default only for a single series with room for them.
+  const labels = ctx.style.labels
+  if (labels === 'all' || (labels === 'auto' && single && n <= 16)) {
+    series.forEach((s, i) => (s.label = stacked && !single ? insideLabel(unit, colors[i], ctx) : barValueLabel(horizontal, unit, ctx)))
+  }
   const values = p.series.flatMap((s) => s.values).filter((v): v is number => v !== null)
   const valueAxis = barValueAxis(values, horizontal, axisName(rec.series || rec.measures.length === 1 ? columnLabel(rec.measures[0], ctx.labels) : '', unit, ctx.lang), unit, ctx)
   const { axis: categoryAxis, lines } = barCategoryAxis(p.xLabels, horizontal, ctx.width)
   const rowHeight = Math.max(30, 18 * p.series.length, lines * 15 + 10)
-  const height = horizontal ? Math.max(240, n * rowHeight + (hasLegend ? 100 : 70)) : 340 + (lines - 1) * 15
+  const height = (horizontal ? Math.max(240, n * rowHeight + 70 + lg.top) : 340 + (lines - 1) * 15) + lg.bottom
   return {
     height,
+    distinguish: !single,
+    swatches: single
+      ? p.xLabels.map((label) => ({ key: label, color: customColor(ctx, label) ?? planned[0], custom: Boolean(customColor(ctx, label)) }))
+      : p.series.map((s, i) => ({ key: s.name, color: colors[i], custom: Boolean(customColor(ctx, s.name)) })),
     option: {
-      grid: { left: 8, right: horizontal ? 48 : 16, top: hasLegend ? 64 : 44, bottom: horizontal ? 32 : 8, containLabel: true },
-      legend: legend(p.series.map((s) => s.name), ctx),
+      grid: { left: 8, right: horizontal ? 48 : 16, top: 36 + lg.top, bottom: (horizontal ? 32 : 8) + lg.bottom, containLabel: true },
+      legend: lg.legend,
       tooltip: axisTooltip(p, ctx, p.series.map((_, i) => i)),
       xAxis: horizontal ? valueAxis : categoryAxis,
       yAxis: horizontal ? categoryAxis : valueAxis,
@@ -355,17 +411,29 @@ function dataEnd(horizontal: boolean): number[] {
   return horizontal ? [0, 4, 4, 0] : [4, 4, 0, 0]
 }
 
-function barValueLabel(horizontal: boolean, unit: Unit, ctx: BuildContext): BarSeriesOption['label'] {
+function barValueLabel(horizontal: boolean, unit: Unit, ctx: Ctx): BarSeriesOption['label'] {
   return {
     show: true,
     position: horizontal ? 'right' : 'top',
     color: ctx.colors.textMuted,
     fontSize: 11,
-    formatter: (item: { value?: unknown }) => (typeof item.value === 'number' ? formatTick(item.value, unit, ctx.lang) : ''),
+    formatter: (item: { value?: unknown }) => (typeof item.value === 'number' ? formatTick(item.value, unit, ctx.lang, full(ctx)) : ''),
   }
 }
 
-function barValueAxis(values: number[], horizontal: boolean, name: string, unit: Unit, ctx: BuildContext, shared?: [number, number]) {
+/** A value inside a stacked segment, in whichever of near-white or near-black reads better on it. */
+function insideLabel(unit: Unit, fill: string, ctx: Ctx): BarSeriesOption['label'] {
+  const [light, dark] = ['#ffffff', '#1f2027']
+  return {
+    show: true,
+    position: 'inside',
+    fontSize: 10,
+    color: contrast(fill, light) >= contrast(fill, dark) ? light : dark,
+    formatter: (item: { value?: unknown }) => (typeof item.value === 'number' ? formatTick(item.value, unit, ctx.lang, full(ctx)) : ''),
+  }
+}
+
+function barValueAxis(values: number[], horizontal: boolean, name: string, unit: Unit, ctx: Ctx, shared?: [number, number]) {
   return {
     type: 'value' as const,
     // Bars start at zero.
@@ -376,7 +444,7 @@ function barValueAxis(values: number[], horizontal: boolean, name: string, unit:
     nameLocation: horizontal ? ('middle' as const) : ('end' as const),
     nameGap: horizontal ? 28 : 22,
     nameTextStyle: horizontal ? {} : { align: 'left' as const, padding: [0, 0, 0, -8] },
-    axisLabel: { formatter: (v: number) => formatTick(v, unit, ctx.lang) },
+    axisLabel: { formatter: (v: number) => formatTick(v, unit, ctx.lang, full(ctx)) },
   }
 }
 
@@ -396,7 +464,7 @@ function barCategoryAxis(labels: string[], horizontal: boolean, width: number) {
 }
 
 /** One small bar chart per series, all on the same value scale. */
-function barMultiples(p: Pivot, horizontal: boolean, ctx: BuildContext): BuiltChart {
+function barMultiples(p: Pivot, horizontal: boolean, ctx: Ctx): BuiltChart {
   const unit = p.series[0]?.unit ?? NO_UNIT
   const values = p.series.flatMap((s) => s.values).filter((v): v is number => v !== null)
   const shared = niceRange(Math.min(0, ...values), Math.max(0, ...values), true)
@@ -412,9 +480,12 @@ function barMultiples(p: Pivot, horizontal: boolean, ctx: BuildContext): BuiltCh
   // The panel's name sits above it, where a value axis name would go.
   const titled = horizontal ? categoryAxes : valueAxes
   titled.forEach((axis, k) => Object.assign(axis, { name: p.series[k].name, nameLocation: horizontal ? 'start' : 'end', nameGap: 8, nameTextStyle: { align: 'left', color: ctx.colors.text, fontWeight: 600, padding: [0, 0, 0, horizontal ? 0 : -8] } }))
+  const colors = p.series.map((s) => customColor(ctx, s.name) ?? ctx.colors.accent)
   return {
     height: bottom + 16,
     multiples: true,
+    distinguish: false,
+    swatches: p.series.map((s, k) => ({ key: s.name, color: colors[k], custom: Boolean(customColor(ctx, s.name)) })),
     option: {
       grid: grids,
       tooltip: axisTooltip(p, ctx, p.series.map((_, i) => i)),
@@ -427,8 +498,9 @@ function barMultiples(p: Pivot, horizontal: boolean, ctx: BuildContext): BuiltCh
         xAxisIndex: k,
         yAxisIndex: k,
         barMaxWidth: 18,
-        color: ctx.colors.accent,
+        color: colors[k],
         itemStyle: { borderRadius: dataEnd(horizontal) },
+        label: ctx.style.labels === 'all' ? barValueLabel(horizontal, unit, ctx) : undefined,
       })),
     },
   }
@@ -436,7 +508,7 @@ function barMultiples(p: Pivot, horizontal: boolean, ctx: BuildContext): BuiltCh
 
 // ---- lines (two units → two panels, never two axes) ----
 
-function lineChart(rec: Recommendation, table: Table, ctx: BuildContext): BuiltChart {
+function lineChart(rec: Recommendation, table: Table, ctx: Ctx): BuiltChart {
   const ordered = orderedSeries(rec)
   const probe = pivot(rec, table, ctx, Infinity)
   // Series whose measures can share an axis.
@@ -456,8 +528,8 @@ function lineChart(rec: Recommendation, table: Table, ctx: BuildContext): BuiltC
   const labelled = plan === 'highlight' && groups.some((g) => g.length > 1)
   const endLabelWidth = labelled ? Math.min(140, Math.max(...p.series.map((s) => textWidth(s.name))) + 12) : 0
 
-  const hasLegend = plan === 'ramp'
-  const top = hasLegend ? 40 : 16
+  const lg = legendFor(p.series.map((s) => s.name), ctx, plan === 'ramp')
+  const top = 16 + lg.top
   const panelHeight = groups.length > 1 ? 170 : 290
   const gap = 44
   const showSymbols = p.xKeys.length <= 24
@@ -485,14 +557,16 @@ function lineChart(rec: Recommendation, table: Table, ctx: BuildContext): BuiltC
       name: axisName(name, unit, ctx.lang),
       nameLocation: 'end' as const,
       nameTextStyle: { align: 'left' as const, padding: [0, 0, 0, -8] },
-      axisLabel: { formatter: (v: number) => formatTick(v, unit, ctx.lang) },
+      axisLabel: { formatter: (v: number) => formatTick(v, unit, ctx.lang, full(ctx)) },
     }
   })
   const series: LineSeriesOption[] = p.series.map((s, i) => {
     const k = groups.findIndex((group) => group.includes(i))
     const solo = groups[k].length === 1
-    const isHighlight = plan !== 'highlight' || solo || highlighted.has(i)
-    const color = plan === 'ramp' ? ramp[i] : isHighlight ? ctx.colors.accent : ctx.colors.context
+    const custom = customColor(ctx, s.name)
+    // A line the person coloured stands out like the highlighted one.
+    const isHighlight = plan !== 'highlight' || solo || highlighted.has(i) || Boolean(custom)
+    const color = custom ?? (plan === 'ramp' ? ramp[i] : isHighlight ? ctx.colors.accent : ctx.colors.context)
     return {
       type: 'line',
       name: s.name,
@@ -509,14 +583,17 @@ function lineChart(rec: Recommendation, table: Table, ctx: BuildContext): BuiltC
       lineStyle: { width: isHighlight ? 2 : 1.5 },
       // Unordered lines are named where they end, so the gray ones need no legend.
       endLabel: labelled && !solo ? { show: true, formatter: '{a}', distance: 6, fontSize: 11, color: isHighlight ? ctx.colors.text : ctx.colors.textMuted, fontWeight: isHighlight ? 600 : 400 } : undefined,
+      label: ctx.style.labels === 'all' ? { show: true, position: 'top', fontSize: 10, color: ctx.colors.textMuted, formatter: (item: { value?: unknown }) => (typeof item.value === 'number' ? formatTick(item.value, s.unit, ctx.lang, full(ctx)) : '') } : undefined,
       emphasis: { focus: 'series' },
     }
   })
   return {
-    height: top + groups.length * (panelHeight + gap) - gap + 36,
+    height: top + groups.length * (panelHeight + gap) - gap + 36 + lg.bottom,
+    distinguish: groups.some((g) => g.length > 1),
+    swatches: series.map((line) => ({ key: String(line.name), color: String(line.color), custom: Boolean(customColor(ctx, String(line.name))) })),
     option: {
       grid: grids,
-      legend: hasLegend ? legend(p.series.map((s) => s.name), ctx) : undefined,
+      legend: lg.legend,
       tooltip: { ...axisTooltip(p, ctx, p.series.map((_, i) => i)), axisPointer: { type: 'line', link: [{ xAxisIndex: 'all' }] } },
       xAxis: xAxes,
       yAxis: yAxes,
@@ -526,7 +603,7 @@ function lineChart(rec: Recommendation, table: Table, ctx: BuildContext): BuiltC
 }
 
 /** One small line chart per series on a shared scale, with the other series faintly behind for comparison. */
-function lineMultiples(p: Pivot, ctx: BuildContext): BuiltChart {
+function lineMultiples(p: Pivot, ctx: Ctx): BuiltChart {
   const unit = p.series[0]?.unit ?? NO_UNIT
   const values = p.series.flatMap((s) => s.values).filter((v): v is number => v !== null)
   const shared = niceRange(Math.min(...values), Math.max(...values), values.every((v) => v >= 0))
@@ -541,11 +618,13 @@ function lineMultiples(p: Pivot, ctx: BuildContext): BuiltChart {
       series.push({ type: 'line', name: s.name, data: s.values, xAxisIndex: k, yAxisIndex: k, color: ctx.colors.context, showSymbol: false, silent: true, z: 1, lineStyle: { width: 1, opacity: 0.6 }, tooltip: { show: false }, emphasis: { disabled: true } })
     })
     refs.push(k)
-    series.push({ type: 'line', name: p.series[k].name, data: p.series[k].values, xAxisIndex: k, yAxisIndex: k, color: ctx.colors.accent, z: 3, connectNulls: false, showSymbol: p.xKeys.length <= 24, symbolSize: 6, itemStyle: { borderColor: ctx.colors.surface, borderWidth: 2 }, lineStyle: { width: 2 } })
+    series.push({ type: 'line', name: p.series[k].name, data: p.series[k].values, xAxisIndex: k, yAxisIndex: k, color: customColor(ctx, p.series[k].name) ?? ctx.colors.accent, z: 3, connectNulls: false, showSymbol: p.xKeys.length <= 24, symbolSize: 6, itemStyle: { borderColor: ctx.colors.surface, borderWidth: 2 }, lineStyle: { width: 2 } })
   })
   return {
     height: bottom + 16,
     multiples: true,
+    distinguish: false,
+    swatches: p.series.map((s) => ({ key: s.name, color: customColor(ctx, s.name) ?? ctx.colors.accent, custom: Boolean(customColor(ctx, s.name)) })),
     option: {
       grid: grids,
       tooltip: { ...axisTooltip(p, ctx, refs), axisPointer: { type: 'line' } },
@@ -560,7 +639,7 @@ function lineMultiples(p: Pivot, ctx: BuildContext): BuiltChart {
         nameLocation: 'end' as const,
         nameGap: 8,
         nameTextStyle: { align: 'left' as const, color: ctx.colors.text, fontWeight: 600, padding: [0, 0, 0, -8] },
-        axisLabel: { formatter: (v: number) => formatTick(v, unit, ctx.lang) },
+        axisLabel: { formatter: (v: number) => formatTick(v, unit, ctx.lang, full(ctx)) },
       })),
       series,
     },
@@ -569,7 +648,7 @@ function lineMultiples(p: Pivot, ctx: BuildContext): BuiltChart {
 
 // ---- scatter ----
 
-function scatterChart(rec: Recommendation, table: Table, ctx: BuildContext): BuiltChart {
+function scatterChart(rec: Recommendation, table: Table, ctx: Ctx): BuiltChart {
   const [mx, my] = rec.measures
   const { rowCount } = chartColumns(table)
   const label = rec.label
@@ -586,17 +665,21 @@ function scatterChart(rec: Recommendation, table: Table, ctx: BuildContext): Bui
     nameLocation: 'middle' as const,
     nameGap: 32,
     splitLine: { show: true, lineStyle: { color: ctx.colors.grid } },
-    axisLabel: { formatter: (v: number) => formatTick(v, m.unit, ctx.lang) },
+    axisLabel: { formatter: (v: number) => formatTick(v, m.unit, ctx.lang, full(ctx)) },
   })
+  const color = customColor(ctx, ctx.labels.points) ?? ctx.colors.accent
+  const names = ctx.style.labels === 'all' || (ctx.style.labels === 'auto' && points.length <= 15)
   return {
     height: 360,
+    distinguish: false,
+    swatches: [{ key: ctx.labels.points, color, custom: Boolean(customColor(ctx, ctx.labels.points)) }],
     option: {
       grid: { left: 24, right: 24, top: 24, bottom: 24, containLabel: true },
       tooltip: {
         trigger: 'item',
         formatter: (item: unknown) => {
           const { name, value } = item as { name: string; value: [number, number] }
-          return `${name ? `<div style="margin-bottom:4px"><b>${escapeHtml(name)}</b></div>` : ''}${tooltipRow(ctx.colors.accent, columnLabel(mx, ctx.labels), formatValue(value[0], mx.unit, ctx.lang))}${tooltipRow(ctx.colors.accent, columnLabel(my, ctx.labels), formatValue(value[1], my.unit, ctx.lang))}`
+          return `${name ? `<div style="margin-bottom:4px"><b>${escapeHtml(name)}</b></div>` : ''}${tooltipRow(color, columnLabel(mx, ctx.labels), formatValue(value[0], mx.unit, ctx.lang, full(ctx)))}${tooltipRow(color, columnLabel(my, ctx.labels), formatValue(value[1], my.unit, ctx.lang, full(ctx)))}`
         },
       },
       xAxis: axis(mx),
@@ -605,11 +688,11 @@ function scatterChart(rec: Recommendation, table: Table, ctx: BuildContext): Bui
         {
           type: 'scatter',
           data: points,
-          color: ctx.colors.accent,
+          color,
           symbolSize: 10,
           itemStyle: { borderColor: ctx.colors.surface, borderWidth: 2, opacity: 0.9 },
           label: {
-            show: points.length <= 15 && Boolean(label),
+            show: names && Boolean(label),
             position: 'right',
             formatter: '{b}',
             color: ctx.colors.textMuted,
@@ -624,7 +707,7 @@ function scatterChart(rec: Recommendation, table: Table, ctx: BuildContext): Bui
 
 // ---- heatmap ----
 
-function heatmapChart(rec: Recommendation, table: Table, ctx: BuildContext): BuiltChart {
+function heatmapChart(rec: Recommendation, table: Table, ctx: Ctx): BuiltChart {
   // The x/series pivot, laid out as columns × rows; every row is kept.
   const p = pivot(rec, table, ctx, Infinity)
   const rows = p.series
@@ -644,13 +727,14 @@ function heatmapChart(rec: Recommendation, table: Table, ctx: BuildContext): Bui
   const height = Math.max(240, rowLabels.length * 30 + 110)
   return {
     height,
+    swatches: [],
     option: {
       grid: { left: 8, right: 16, top: 24, bottom: 64, containLabel: true },
       tooltip: {
         trigger: 'item',
         formatter: (item: unknown) => {
           const { value } = item as { value: [number, number, number] }
-          return `<div style="margin-bottom:4px;color:${ctx.colors.textMuted}">${escapeHtml(rowLabels[value[1]])} · ${escapeHtml(p.xLabels[value[0]])}</div><b>${escapeHtml(formatValue(value[2], unit, ctx.lang))}</b>`
+          return `<div style="margin-bottom:4px;color:${ctx.colors.textMuted}">${escapeHtml(rowLabels[value[1]])} · ${escapeHtml(p.xLabels[value[0]])}</div><b>${escapeHtml(formatValue(value[2], unit, ctx.lang, full(ctx)))}</b>`
         },
       },
       xAxis: { type: 'category', data: p.xLabels, name: columnLabel(rec.x, ctx.labels), nameLocation: 'middle', nameGap: 26, axisLine: { show: false }, axisLabel: { hideOverlap: true }, splitArea: { show: false } },
@@ -665,7 +749,7 @@ function heatmapChart(rec: Recommendation, table: Table, ctx: BuildContext): Bui
         itemWidth: 10,
         itemHeight: 160,
         inRange: { color: ctx.colors.sequential },
-        text: [formatTick(Number.isFinite(max) ? max : 1, unit, ctx.lang), formatTick(Math.min(0, Number.isFinite(min) ? min : 0), unit, ctx.lang)],
+        text: [formatTick(Number.isFinite(max) ? max : 1, unit, ctx.lang, full(ctx)), formatTick(Math.min(0, Number.isFinite(min) ? min : 0), unit, ctx.lang, full(ctx))],
         textStyle: { color: ctx.colors.textMuted, fontSize: 11 },
       },
       series: [
@@ -673,6 +757,8 @@ function heatmapChart(rec: Recommendation, table: Table, ctx: BuildContext): Bui
           type: 'heatmap',
           data,
           itemStyle: { borderColor: ctx.colors.surface, borderWidth: 2, borderRadius: 3 },
+          // Values in the cells only on request: the colour scale carries them.
+          label: ctx.style.labels === 'all' ? { show: true, fontSize: 10, formatter: (item: { value?: unknown }) => formatTick((item.value as number[])[2], unit, ctx.lang, full(ctx)) } : undefined,
           emphasis: { itemStyle: { borderColor: ctx.colors.text, borderWidth: 1 } },
         },
       ],
@@ -682,7 +768,7 @@ function heatmapChart(rec: Recommendation, table: Table, ctx: BuildContext): Bui
 
 // ---- donut ----
 
-function donutChart(rec: Recommendation, table: Table, ctx: BuildContext): BuiltChart {
+function donutChart(rec: Recommendation, table: Table, ctx: Ctx): BuiltChart {
   const p = pivot(rec, table, ctx)
   const s = p.series[0]
   let slices: { name: string; value: number; itemStyle?: { color: string } }[] = p.xLabels
@@ -696,15 +782,39 @@ function donutChart(rec: Recommendation, table: Table, ctx: BuildContext): Built
     slices = [...slices.slice(0, MAX_RAMP - 1), { name: ctx.labels.other, value: rest.reduce((acc, r) => acc + r.value, 0) }]
   }
   const colors = rampColors(folded ? slices.length - 1 : slices.length, ctx).reverse()
-  slices = slices.map((slice, i) => ({ ...slice, itemStyle: { color: colors[i] ?? ctx.colors.context } }))
+  slices = slices.map((slice, i) => ({ ...slice, itemStyle: { color: customColor(ctx, slice.name) ?? colors[i] ?? ctx.colors.context } }))
+  // Labels sit beside the ring; on a narrow card (or when hidden) a legend below names the slices instead.
+  const narrow = ctx.width < 480
+  const labelled = ctx.style.labels !== 'none' && !narrow
+  const sum = slices.reduce((acc, slice) => acc + slice.value, 0)
+  const share = new Map(slices.map((slice) => [slice.name, sum ? (slice.value / sum) * 100 : 0]))
+  const legendRows = Math.ceil(slices.length / (narrow ? 2 : 4))
+  const lg = labelled
+    ? { top: 0, bottom: 0 }
+    : {
+        legend: {
+          type: 'plain' as const,
+          bottom: 0,
+          left: 'center',
+          itemGap: 12,
+          data: slices.map((slice) => slice.name),
+          textStyle: { color: ctx.colors.textMuted },
+          formatter: (name: string) => `${name} ${(share.get(name) ?? 0).toFixed(1)}%`,
+        },
+        top: 0,
+        bottom: legendRows * 22 + 8,
+      }
   return {
-    height: 320,
+    height: (narrow ? 260 : 320) + lg.top + lg.bottom,
+    distinguish: true,
+    swatches: slices.map((slice) => ({ key: slice.name, color: slice.itemStyle!.color, custom: Boolean(customColor(ctx, slice.name)) })),
     option: {
+      legend: lg.legend,
       tooltip: {
         trigger: 'item',
         formatter: (item: unknown) => {
           const { name, value, percent, color } = item as { name: string; value: number; percent: number; color: string }
-          return tooltipRow(color, name, `${formatValue(value, s.unit, ctx.lang)} · ${percent.toFixed(1)}%`)
+          return tooltipRow(color, name, `${formatValue(value, s.unit, ctx.lang, full(ctx))} · ${percent.toFixed(1)}%`)
         },
       },
       series: [
@@ -715,7 +825,9 @@ function donutChart(rec: Recommendation, table: Table, ctx: BuildContext): Built
           data: slices,
           startAngle: 90,
           itemStyle: { borderColor: ctx.colors.surface, borderWidth: 2, borderRadius: 4 },
-          label: { color: ctx.colors.text, fontSize: 12, formatter: (item: { name: string; percent?: number }) => `${item.name}\n{pct|${(item.percent ?? 0).toFixed(1)}%}`, rich: { pct: { color: ctx.colors.textMuted, fontSize: 11, padding: [3, 0, 0, 0] } } },
+          top: lg.top,
+          bottom: lg.bottom,
+          label: { show: labelled, color: ctx.colors.text, fontSize: 12, formatter: (item: { name: string; percent?: number }) => `${item.name}\n{pct|${(item.percent ?? 0).toFixed(1)}%}`, rich: { pct: { color: ctx.colors.textMuted, fontSize: 11, padding: [3, 0, 0, 0] } } },
           labelLine: { lineStyle: { color: ctx.colors.axis }, length: 10, length2: 12 },
           emphasis: { scale: false },
         },
@@ -726,7 +838,7 @@ function donutChart(rec: Recommendation, table: Table, ctx: BuildContext): Built
 
 // ---- timeline ----
 
-function timelineChart(rec: Recommendation, table: Table, ctx: BuildContext): BuiltChart {
+function timelineChart(rec: Recommendation, table: Table, ctx: Ctx): BuiltChart {
   const { rowCount } = chartColumns(table)
   const when = rec.x!
   const label = rec.label
@@ -753,8 +865,10 @@ function timelineChart(rec: Recommendation, table: Table, ctx: BuildContext): Bu
     const coord = params.coordSys as unknown as { x: number; y: number; width: number; height: number }
     const x0 = Math.max(from[0], coord.x)
     const x1 = Math.min(Math.max(to[0], from[0] + 3), coord.x + coord.width)
-    return { type: 'rect' as const, shape: { x: x0, y: from[1] - h / 2, width: x1 - x0, height: h, r: 4 }, style: api.style() }
+    return { type: 'rect' as const, shape: { x: x0, y: from[1] - h / 2, width: x1 - x0, height: h, r: 4 }, style: { ...api.style(), fill: api.visual('color') as string } }
   }
+  // Each row (task, phase, event) can have its own colour.
+  const rowColor = (name: string) => customColor(ctx, name) ?? ctx.colors.accent
 
   const series = points
     ? ({
@@ -762,17 +876,19 @@ function timelineChart(rec: Recommendation, table: Table, ctx: BuildContext): Bu
         color: ctx.colors.accent,
         symbolSize: 11,
         itemStyle: { borderColor: ctx.colors.surface, borderWidth: 2 },
-        data: rows.map((r, i) => ({ value: [r.start, i], name: r.name })),
+        data: rows.map((r, i) => ({ value: [r.start, i], name: r.name, itemStyle: { color: rowColor(r.name) } })),
       } satisfies ScatterSeriesOption)
     : ({
         type: 'custom',
         color: ctx.colors.accent,
         renderItem,
         encode: { x: [0, 1], y: 2 },
-        data: rows.map((r, i) => [r.start, r.end, i]),
+        data: rows.map((r, i) => ({ value: [r.start, r.end, i], itemStyle: { color: rowColor(r.name) } })),
       } satisfies CustomSeriesOption)
   return {
     height: Math.max(200, rows.length * 36 + 64),
+    distinguish: false,
+    swatches: rows.map((r) => ({ key: r.name, color: rowColor(r.name), custom: Boolean(customColor(ctx, r.name)) })),
     option: {
       // Dates are stored as UTC days; read them that way in every time zone.
       useUTC: true,
@@ -808,14 +924,44 @@ function timelineChart(rec: Recommendation, table: Table, ctx: BuildContext): Bu
   }
 }
 
-export function buildChart(rec: Recommendation, table: Table, ctx: BuildContext): BuiltChart {
+export function buildChart(rec: Recommendation, table: Table, context: BuildContext): BuiltChart {
+  const style = context.style ?? DEFAULT_STYLE
+  const ctx: Ctx = { ...context, style, colors: styledColors(context.colors, style) }
   const built = drawChart(rec, table, ctx)
+  const option = built.option
+  // Gridlines off: hide the value axes' split lines.
+  if (!style.grid) {
+    for (const axis of [option.xAxis, option.yAxis].flat()) {
+      if (axis && (axis as { type?: string }).type !== 'category') Object.assign(axis, { splitLine: { show: false } })
+    }
+  }
+  // A title pushes everything down by one line.
+  const title = style.title.trim()
+  if (title) {
+    const shift = 32
+    option.title = { text: title, left: 4, top: 0, textStyle: { fontSize: 15, fontWeight: 600, color: ctx.colors.text } }
+    for (const grid of [option.grid].flat()) if (grid && typeof grid.top === 'number') grid.top += shift
+    for (const legend of [option.legend].flat()) if (legend && typeof legend.top === 'number') legend.top += shift
+    for (const series of [option.series].flat()) if (series?.type === 'pie') series.top = (typeof series.top === 'number' ? series.top : 0) + shift
+    built.height += shift
+  }
   // Quiet: a short fade-in, no long drawing animation.
-  built.option = { animationDuration: 250, animationDurationUpdate: 200, ...built.option }
-  return built
+  built.option = { animationDuration: 250, animationDurationUpdate: 200, ...option }
+  return { swatches: [], distinguish: false, ...built }
 }
 
-function drawChart(rec: Recommendation, table: Table, ctx: BuildContext): BuiltChart {
+/** A title made from the chart's columns, offered as the placeholder for the title field. */
+export function autoTitle(rec: Recommendation, labels: ChartLabels, lang: ChartLanguage): string {
+  const name = (col: Column | undefined) => columnLabel(col, labels)
+  if (rec.type === 'timeline') return name(rec.label) || name(rec.x)
+  if (rec.type === 'scatter') return lang === 'zh-CN' ? `${name(rec.measures[1])}与${name(rec.measures[0])}` : `${name(rec.measures[1])} vs ${name(rec.measures[0])}`
+  const what = rec.series ? name(rec.measures[0]) : rec.measures.map(name).join(lang === 'zh-CN' ? '、' : ', ')
+  const by = [rec.x, rec.series].filter(Boolean).map(name).join(lang === 'zh-CN' ? '、' : ' and ')
+  if (!by) return what
+  return lang === 'zh-CN' ? `${what}（按${by}）` : `${what} by ${by}`
+}
+
+function drawChart(rec: Recommendation, table: Table, ctx: Ctx): BuiltChart {
   switch (rec.type) {
     case 'bar':
     case 'bar-grouped':

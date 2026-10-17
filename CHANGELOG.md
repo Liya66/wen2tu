@@ -4,6 +4,8 @@
 
 ### Features
 - 统计兔 data2tu prototype at `/chart/` and `/en/chart/`: paste a table (Excel/Sheets copy, CSV, Markdown from an AI answer, database client output, optionally with its SQL query) and get the three best-fitting charts. Reads units (`1,234`, `12.5%`, `¥3.2万`, `1.2亿`, `$1.2M`), periods (`2024-03`, `2024年3月`, `Q1`, `Jan-24`), date ranges, missing values, summary rows and total columns; tells long from wide tables. Charts (ECharts, loaded on demand) use one muted slate hue: shades for ordered series and stacks, the largest line highlighted with the rest in gray, small multiples past three unordered groups.
+- Chart style panel (Style button, like the mind map editor's): title, eight one-hue palettes or a custom base color, value labels, legend, bar direction, category order, 万/亿 (K/M) or full numbers, gridlines. Colors tab: give any series, slice, bar or timeline row its own color; colors are kept by name. Choices that are too faint or hard to tell apart (also for red–green color-blind readers) get a warning and a one-click fix that moves the color's lightness.
+- Chart exports from each card: PNG (2×) and SVG, with the card background or transparent (light colors), copy as image, and the detected data as CSV (plain numbers, ISO dates, BOM for Excel).
 
 ## 0.1.0 — first public release · 首个公开版本
 
