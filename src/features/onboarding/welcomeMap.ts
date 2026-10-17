@@ -33,7 +33,7 @@ const CONTENT: Record<Language, { title: string; root: string; branches: Branch[
         children: [
           { text: '开源、本地优先的思维导图工具' },
           { text: '“文兔兔” = “文 to 图”' },
-          { text: '不用注册账号，极简操作' },
+          { text: '无账号注册，极简操作' },
           { text: '纯本地数据，无隐私担忧' },
           { text: '支持导出多种图片格式' },
         ],
@@ -76,7 +76,7 @@ const CONTENT: Record<Language, { title: string; root: string; branches: Branch[
         text: '下一步',
         side: 'right',
         children: [
-          { text: '这张导图可以随意修改或删除' },
+          { text: '随意修改或删除导图或节点' },
           { text: '点击“新建”开始第一张脑图' },
           { text: '在“设置 → 欢迎导图”可重新打开' },
         ],
