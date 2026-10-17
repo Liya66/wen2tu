@@ -2,7 +2,7 @@ import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { LanguageSwitcher } from '../components/LanguageSwitcher'
-import i18n, { detectLanguage } from './index'
+import i18n, { detectLanguage, languagePath } from './index'
 import en from './locales/en.json'
 import zhCN from './locales/zh-CN.json'
 
@@ -48,6 +48,17 @@ describe('detectLanguage', () => {
     expect(detectLanguage('/')).toBe('zh-CN')
     expect(detectLanguage('/index.html')).toBe('zh-CN')
     expect(detectLanguage('/english')).toBe('zh-CN')
+  })
+})
+
+describe('languagePath', () => {
+  it('keeps the page and only swaps the /en prefix', () => {
+    expect(languagePath('/', 'en')).toBe('/en/')
+    expect(languagePath('/en/', 'zh-CN')).toBe('/')
+    expect(languagePath('/en', 'zh-CN')).toBe('/')
+    expect(languagePath('/chart/', 'en')).toBe('/en/chart/')
+    expect(languagePath('/en/chart/', 'zh-CN')).toBe('/chart/')
+    expect(languagePath('/en/chart/', 'en')).toBe('/en/chart/')
   })
 })
 

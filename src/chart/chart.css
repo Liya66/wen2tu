@@ -1,0 +1,311 @@
+/* 统计兔 data2tu: the chart page. Builds on the shared tokens in styles/app.css. */
+
+/* Unlike the mind map canvas, this page scrolls. */
+html:has(.chart-app),
+html:has(.chart-app) body {
+  overflow: auto;
+  height: auto;
+  min-height: 100%;
+}
+
+html:has(.chart-app) #root {
+  height: auto;
+}
+
+.chart-app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-app .toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  height: var(--toolbar-height);
+  flex: none;
+}
+
+.chart-badge {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--warning-bg);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.chart-tagline {
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chart-link {
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.chart-main {
+  display: grid;
+  grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+  width: 100%;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* ---- input column ---- */
+
+.chart-input {
+  position: sticky;
+  top: calc(var(--toolbar-height) + 20px);
+  display: grid;
+  /* minmax(0, …) keeps long pasted lines from widening the column. */
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  gap: 12px;
+  max-height: calc(100vh - var(--toolbar-height) - 40px);
+  overflow: auto;
+}
+
+.chart-input-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 30px;
+  font-weight: 600;
+}
+
+.chart-input-head .button {
+  padding: 3px 10px;
+  font-size: 12px;
+}
+
+.chart-paste {
+  width: 100%;
+  min-height: 220px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  resize: vertical;
+  white-space: pre;
+  tab-size: 12;
+}
+
+.chart-samples {
+  display: grid;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.chart-samples select {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.chart-detect {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.chart-detect h2 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.chart-detect-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.chart-columns {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chart-columns li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--bg);
+  font-size: 12px;
+}
+
+.chart-columns b {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chart-columns span {
+  flex: none;
+  color: var(--text-muted);
+}
+
+.chart-columns li[data-role='total'],
+.chart-columns li[data-role='id'] {
+  opacity: 0.65;
+}
+
+.chart-notes {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ---- results column ---- */
+
+.chart-results {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.chart-empty {
+  margin: 0;
+  padding: 48px 24px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.chart-card {
+  padding: 16px 18px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  min-width: 0;
+}
+
+.chart-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin-bottom: 8px;
+}
+
+.chart-card-header h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.chart-card-header p {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.chart-rank {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent-text);
+}
+
+.chart-frame {
+  position: relative;
+}
+
+.chart-box {
+  width: 100%;
+  min-height: 200px;
+}
+
+.chart-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.chart-data {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.chart-data summary {
+  padding: 10px 16px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+.chart-data-scroll {
+  max-height: 420px;
+  overflow: auto;
+  border-top: 1px solid var(--border);
+}
+
+.chart-data table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.chart-data th,
+.chart-data td {
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.chart-data th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  font-weight: 600;
+}
+
+.chart-data [data-numeric] {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 860px) {
+  .chart-main {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 16px;
+  }
+
+  .chart-input {
+    position: static;
+    max-height: none;
+  }
+
+  .chart-tagline {
+    display: none;
+  }
+}

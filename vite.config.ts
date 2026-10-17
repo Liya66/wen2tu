@@ -27,10 +27,13 @@ export default defineConfig({
     // importers and image export are split out and loaded on demand.
     chunkSizeWarningLimit: 600,
     // One page per interface language: / is Chinese, /en/ is English.
+    // The chart mode (统计兔 data2tu) lives at /chart/ and /en/chart/.
     rolldownOptions: {
       input: {
         main: fileURLToPath(new URL('./index.html', import.meta.url)),
         en: fileURLToPath(new URL('./en/index.html', import.meta.url)),
+        chart: fileURLToPath(new URL('./chart/index.html', import.meta.url)),
+        enChart: fileURLToPath(new URL('./en/chart/index.html', import.meta.url)),
       },
     },
   },

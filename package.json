@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@zumer/snapdom": "3.3.4",
+    "echarts": "6.1.0",
     "i18next": "^26.4.5",
     "idb": "^8.0.4",
     "lucide-react": "^1.57.0",

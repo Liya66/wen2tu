@@ -316,5 +316,83 @@
     "folder": "Folder tab",
     "double": "Double border",
     "tag": "Tag"
+  },
+  "chart": {
+    "title": "data2tu",
+    "tagline": "Paste a table, get the chart",
+    "prototype": "Prototype",
+    "mindmap": "Mind maps",
+    "pasteLabel": "Paste a table",
+    "pastePlaceholder": "Copy a table from Excel, Google Sheets, a CSV file or an AI answer and paste it here. You can paste the SQL query along with its result.",
+    "samples": "Sample tables",
+    "samplePick": "Pick a sample…",
+    "clear": "Clear",
+    "empty": "Paste a table and the three best-fitting charts appear here.",
+    "noTable": "No table found: it needs at least two columns and two rows.",
+    "noChart": "Found a table, but nothing in it can be charted (no numbers or dates).",
+    "detected": "What was detected",
+    "rows": "{{count}} rows",
+    "format": {
+      "markdown": "Markdown table",
+      "tsv": "Excel / Sheets copy",
+      "csv": "CSV",
+      "aligned": "Aligned text"
+    },
+    "shape": {
+      "long": "Long table",
+      "wide": "Wide table"
+    },
+    "shapeHint": {
+      "long": "one column per variable",
+      "wide": "one variable spread over several columns"
+    },
+    "type": {
+      "category": "category",
+      "number": "number",
+      "date": "date",
+      "range": "date range"
+    },
+    "role": {
+      "total": "total, not drawn",
+      "id": "ID, not drawn"
+    },
+    "notes": {
+      "ignored-lines": "Lines of text around the table ignored: {{count}}",
+      "dropped-summary-rows": "Removed summary rows: {{labels}}",
+      "total-column": "“{{column}}” is a total: used to spot parts of a whole, not drawn",
+      "sql-used": "Used the SQL query’s grouping, aggregates and ordering as hints"
+    },
+    "charts": {
+      "bar": "Bar chart",
+      "bar-grouped": "Grouped bars",
+      "bar-stacked": "Stacked bars",
+      "line": "Line chart",
+      "scatter": "Scatter plot",
+      "heatmap": "Heatmap",
+      "donut": "Donut",
+      "timeline": "Timeline"
+    },
+    "reasons": {
+      "time-series": "Values over time: a line shows the trend",
+      "few-periods": "Only two or three periods: side by side compares best",
+      "compare-categories": "Compares categories, sorted by value",
+      "ranked-top-n": "The query took the top rows by value; its order is kept",
+      "parts-of-whole": "The parts add up to a whole",
+      "compare-groups": "Two levels of categories, compared in groups",
+      "two-measures": "Two values in different units: how they relate",
+      "matrix": "Two dimensions with many values: colour shows the pattern",
+      "schedule": "Each row has a start and an end",
+      "events": "Each row is a dated event",
+      "composition-over-time": "There is a total column: stacks show the parts and the total over time",
+      "alternative": "Another view"
+    },
+    "rank": "Pick {{n}}",
+    "dataTable": "Show the detected data",
+    "other": "Other",
+    "value": "Value",
+    "period": "Period",
+    "loading": "Loading chart…",
+    "meltedColumns": "{{count}} columns, unpivoted",
+    "multiples": "one small chart per group, on the same scale"
   }
 }

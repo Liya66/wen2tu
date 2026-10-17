@@ -316,5 +316,83 @@
     "folder": "文件夹",
     "double": "双层边框",
     "tag": "吊牌"
+  },
+  "chart": {
+    "title": "统计兔",
+    "tagline": "粘贴表格，自动出图",
+    "prototype": "原型",
+    "mindmap": "思维导图",
+    "pasteLabel": "粘贴表格",
+    "pastePlaceholder": "从 Excel、在线表格、CSV 文件或 AI 的回答里复制一张表，粘贴到这里。可以连同 SQL 查询一起粘贴。",
+    "samples": "示例表格",
+    "samplePick": "选一个示例…",
+    "clear": "清空",
+    "empty": "粘贴一张表格，这里会给出最合适的三种图。",
+    "noTable": "没有找到表格：至少需要两列、两行。",
+    "noChart": "找到了表格，但没有能画成图的数值或日期。",
+    "detected": "识别结果",
+    "rows": "{{count}} 行",
+    "format": {
+      "markdown": "Markdown 表格",
+      "tsv": "Excel / 表格复制",
+      "csv": "CSV",
+      "aligned": "对齐文本"
+    },
+    "shape": {
+      "long": "长表",
+      "wide": "宽表"
+    },
+    "shapeHint": {
+      "long": "每个变量一列",
+      "wide": "同一变量分散在多列"
+    },
+    "type": {
+      "category": "分类",
+      "number": "数值",
+      "date": "日期",
+      "range": "时间段"
+    },
+    "role": {
+      "total": "合计，不单独画",
+      "id": "编号，不画"
+    },
+    "notes": {
+      "ignored-lines": "忽略了表格外的 {{count}} 行文字",
+      "dropped-summary-rows": "去掉了汇总行：{{labels}}",
+      "total-column": "“{{column}}”是合计列：用来判断构成，不单独画",
+      "sql-used": "用了 SQL 查询里的分组、聚合和排序作为提示"
+    },
+    "charts": {
+      "bar": "条形图",
+      "bar-grouped": "分组条形图",
+      "bar-stacked": "堆叠条形图",
+      "line": "折线图",
+      "scatter": "散点图",
+      "heatmap": "热力图",
+      "donut": "环形图",
+      "timeline": "时间线"
+    },
+    "reasons": {
+      "time-series": "数值随时间变化，折线看走势",
+      "few-periods": "只有两三个时间点，并排比较更清楚",
+      "compare-categories": "比较各分类的大小，按数值排序",
+      "ranked-top-n": "查询按数值取了前几名，保留查询的顺序",
+      "parts-of-whole": "各部分加起来是一个整体",
+      "compare-groups": "两层分类，分组比较",
+      "two-measures": "两个不同单位的数值，看它们的关系",
+      "matrix": "两个维度取值都多，用色块看分布",
+      "schedule": "每行有开始和结束，排成时间线",
+      "events": "每行一个日期和事件，排成时间线",
+      "composition-over-time": "有合计列：堆叠看构成，也看总量变化",
+      "alternative": "另一种看法"
+    },
+    "rank": "推荐 {{n}}",
+    "dataTable": "查看识别出的数据",
+    "other": "其他",
+    "value": "数值",
+    "period": "时间",
+    "loading": "正在加载图表…",
+    "meltedColumns": "{{count}} 列，已转成长表",
+    "multiples": "每组一张小图，刻度相同"
   }
 }
